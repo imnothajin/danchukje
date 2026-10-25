@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>단웅제</title>
+<style>
+@import url('https://cdn.jsdelivr.net/gh/MonadABXY/mona-font/web/mona.css');
+:root{--bg:#fafaf7;--fg:#141414;--mute:#8d8d86;--line:#e4e4de;--off:#dcdcd5}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--fg);font-family:'Mona12',system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.6;transition:background .4s}
+main{max-width:420px;margin:0 auto;min-height:100dvh;padding:44px 28px 0;display:flex;flex-direction:column}
+h1{font-size:15px;font-weight:400;letter-spacing:.3em;color:var(--mute)}
+.hide{display:none!important}
+label{display:block;font-size:13px;color:var(--mute);margin:30px 0 8px}
+input,select{width:100%;font:inherit;color:var(--fg);background:transparent;border:0;border-bottom:1px solid var(--fg);border-radius:0;padding:8px 0;outline:none;appearance:none;-webkit-appearance:none}
+input::placeholder{color:var(--off)}
+.seg{display:flex;gap:8px}
+.seg button{flex:1;font:inherit;font-size:15px;padding:10px 0;background:transparent;color:var(--mute);border:1px solid var(--line);border-radius:0;cursor:pointer}
+.seg button.on{color:var(--bg);background:var(--fg);border-color:var(--fg)}
+.btn{display:block;width:100%;font:inherit;font-size:16px;padding:15px 0;color:var(--bg);background:var(--fg);border:1px solid var(--fg);border-radius:0;cursor:pointer}
+.btn small{font-size:11px;opacity:.7;margin-left:5px}
+.btn.ghost{color:var(--fg);background:var(--bg)}
+.btn.soft{opacity:.45}
+.btn:disabled{color:#fff;background:var(--off);border-color:var(--off);cursor:default}
+.note{font-size:12px;color:var(--mute);line-height:1.8;margin:30px 0 22px}
+.err{font-size:13px;color:#b3261e;min-height:20px;margin-top:14px}
+.who{font-size:13px;color:var(--mute);margin-top:6px}
+.who a{color:var(--mute);margin-left:10px;cursor:pointer;text-decoration:underline}
+.count{font-size:72px;line-height:1;margin:44px 0 6px;letter-spacing:-.02em}
+.count small{font-size:20px;color:var(--mute);letter-spacing:0;margin-left:6px}
+.hint{font-size:12px;color:var(--mute);margin-top:10px}
+.list{margin:24px 0 0;border-top:1px solid var(--line)}
+
+/* 도장 칸 */
+.bt{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 0;border-bottom:1px solid var(--line);cursor:pointer;position:relative}
+.bt .t{font-size:15px;min-width:0}
+.bt .t small{display:block;font-size:12px;color:var(--mute)}
+.stp{flex:0 0 auto;width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;line-height:1;border:2px dashed var(--off);filter:grayscale(1);opacity:.4}
+/* 다른 부에서 받은 도장: 회색빛 푸른 톤의 작은 표식 */
+.bt.prev .stp{filter:grayscale(.9);opacity:.7;border:2px solid #b4b8c6;background:#e6e8ef;transform:rotate(-8deg)}
+.bt.prev .t small{color:#7b8093}
+.bt.done{cursor:default}
+.bt.done .stp{filter:none;opacity:1;border:2px solid hsl(var(--h) 55% 42%);background:hsl(var(--h) 75% 92%);box-shadow:inset 0 0 0 3px hsl(var(--h) 75% 92%),inset 0 0 0 4px hsl(var(--h) 55% 42%);transform:rotate(-8deg)}
+.bt.done .t small{color:hsl(var(--h) 55% 38%)}
+.bt.new .stp{animation:pop .6s .5s both}
+@keyframes pop{0%{transform:scale(2) rotate(-35deg);opacity:0}55%{transform:scale(.88) rotate(-8deg);opacity:1}100%{transform:scale(1) rotate(-8deg)}}
+@media (prefers-reduced-motion:reduce){.bt.new .stp{animation:none}}
+
+/* 하단 고정 버튼 */
+.actions{position:sticky;bottom:0;margin-top:auto;background:linear-gradient(transparent,var(--bg) 18px);padding:26px 0 calc(16px + env(safe-area-inset-bottom))}
+.gap{height:10px}
+.sheet{position:fixed;inset:0;background:color-mix(in srgb,var(--bg) 97%,transparent);display:flex;align-items:center;justify-content:center;padding:28px;z-index:5}
+.sheet>div{width:100%;max-width:364px}
+.sheet p{font-size:13px;color:var(--mute);margin-bottom:6px}
+.toast{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);background:var(--fg);color:var(--bg);font-size:13px;padding:10px 18px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:9;white-space:nowrap}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<main>
+
+<section id="login" class="hide" style="flex-direction:column;flex:1">
+  <h1>단웅제</h1>
+  <label>소속</label>
+  <div class="seg" id="aff">
+    <button type="button" data-v="1학년">1학년</button>
+    <button type="button" data-v="2학년">2학년</button>
+    <button type="button" data-v="외부인">외부인</button>
+  </div>
+  <label>이름</label>
+  <input id="name" autocomplete="off" maxlength="20" placeholder="홍길동">
+  <label>전화번호</label>
+  <input id="phone" type="tel" inputmode="numeric" autocomplete="off" placeholder="010-0000-0000">
+  <p class="note">부정행위 방지를 위해 당첨자들의 전화번호 인증을 요청할 수 있습니다.<br>전화번호는 축제 후 바로 파기됩니다.<br>전화번호 하나당 한 번만 참여할 수 있어요.</p>
+  <button class="btn" id="go">시작</button>
+  <div class="err" id="loginErr"></div>
+</section>
+
+<section id="home" class="hide" style="flex-direction:column;flex:1">
+  <h1>단웅제 · <span id="rd">1</span>부</h1>
+  <div class="who"><span id="me"></span><a id="out">로그아웃</a></div>
+  <div class="count"><span id="n">0</span><small>/ <span id="goal">2</span></small></div>
+  <div class="hint" id="hint">부스를 돌며 도장을 모아 보세요</div>
+  <div class="list" id="list"></div>
+  <div class="actions">
+    <button class="btn ghost" id="stampBtn">도장 받기</button>
+    <div class="gap"></div>
+    <button class="btn" id="entryBtn" disabled>행운권 응모하기</button>
+  </div>
+</section>
+
+</main>
+
+<div class="sheet hide" id="sheet">
+  <div>
+    <p>부스를 고르고, 스태프에게 폰을 건네 비밀번호를 입력받으세요.</p>
+    <label>부스</label>
+    <select id="booth"></select>
+    <label>비밀번호 (스태프 입력)</label>
+    <input id="pw" type="password" inputmode="numeric" autocomplete="off" placeholder="····">
+    <div class="err" id="sheetErr"></div>
+    <div style="height:18px"></div>
+    <button class="btn" id="sheetOk">확인</button>
+    <div class="gap"></div>
+    <button class="btn ghost" id="sheetNo" style="border-color:var(--line)">닫기</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const URL_ = 'https://asxqlexmdignacscwjzx.supabase.co';
+const KEY  = 'sb_publishable_XUFIDkr7SlLV6Dea-2S0MQ_UQQTCJhu';
+const $ = s => document.querySelector(s);
+
+async function rpc(fn, args){
+  let r;
+  try{
+    r = await fetch(URL_ + '/rest/v1/rpc/' + fn, {
+      method:'POST',
+      headers:{apikey:KEY,'Content-Type':'application/json'},
+      body:JSON.stringify(args||{})
+    });
+  }catch(e){ throw new Error('인터넷 연결을 확인해 주세요'); }
+  const j = await r.json().catch(()=>null);
+  if(!r.ok) throw new Error((j && j.message) || '오류가 발생했어요');
+  return j;
+}
+
+/* 부스 이름 → 이모티콘 */
+const EMOJI = {
+  '그림과이야기부':'🖼️','도서부':'📚','문항해설지제작부':'📝','지구과학실험탐구부':'🌏','건축설계디자인부':'🏠',
+  '교지편집부':'📒','물리실험탐구부':'🧲','미술부':'🎨','방송부':'🎙️','밴드부':'🎸',
+  '보디빌딩부':'💪','사물놀이부':'🥁','사진부':'📷','생명과학실험탐구부':'🧬','생명윤리탐구부':'⚖️',
+  '생명화학융합탐구부':'🧪','세계도시연구부':'🌆','수학 논리 퍼즐부':'🧩','신문부':'🗞️','역사탐구부':'🏛️',
+  '연극부':'🎭','영자신문부':'🔤','오케스트라':'🎻','인공지능탐구활동부':'🤖','인문학탐구부':'🧠',
+  '일본문화탐구부':'🍣','전략보드게임연구부':'♟️','축구부':'⚽','통계활용부':'📊','화학실험탐구부':'⚗️',
+  '영어원서읽기부':'📕','인공지능캡스톤디자인부':'💻','의생명과학탐구부':'💉'
+};
+const emo = name => EMOJI[name] || '⭐';
+const hue = id => (id * 47) % 360;
+
+let me = null, st = null, aff = '', seen = null, seenRound = null;
+try{ me = JSON.parse(localStorage.getItem('dwj_me') || 'null'); }catch(e){}
+
+function show(id){ ['login','home'].forEach(x => { const e=$('#'+x); e.classList.toggle('hide', x!==id); e.style.display = x===id ? 'flex' : 'none'; }); }
+function toast(t){ const e=$('#toast'); e.textContent=t; e.classList.add('on'); setTimeout(()=>e.classList.remove('on'),1900); }
+function logout(){ try{localStorage.removeItem('dwj_me');}catch(e){} me=null; st=null; seen=null; seenRound=null; show('login'); }
+
+/* ---------- 로그인 ---------- */
+document.querySelectorAll('#aff button').forEach(b => b.onclick = () => {
+  aff = b.dataset.v;
+  document.querySelectorAll('#aff button').forEach(x => x.classList.toggle('on', x===b));
+});
+$('#phone').addEventListener('input', e => {
+  const d = e.target.value.replace(/\D/g,'').slice(0,11);
+  e.target.value = d.length>7 ? d.slice(0,3)+'-'+d.slice(3,7)+'-'+d.slice(7)
+                 : d.length>3 ? d.slice(0,3)+'-'+d.slice(3) : d;
+});
+$('#go').onclick = async () => {
+  const name = $('#name').value.trim(), phone = $('#phone').value.replace(/\D/g,'');
+  const err = $('#loginErr'); err.textContent = '';
+  if(!aff) return err.textContent = '소속을 선택해 주세요';
+  if(!name) return err.textContent = '이름을 입력해 주세요';
+  if(phone.length<10) return err.textContent = '전화번호를 정확히 입력해 주세요';
+  $('#go').disabled = true;
+  try{
+    me = await rpc('login', {p_affiliation:aff, p_name:name, p_phone:phone});
+    try{ localStorage.setItem('dwj_me', JSON.stringify(me)); }catch(e){}
+    await load();
+  }catch(e){ err.textContent = e.message; }
+  $('#go').disabled = false;
+};
+$('#out').onclick = () => { if(confirm('로그아웃할까요?')) logout(); };
+
+/* ---------- 홈 ---------- */
+async function load(){
+  try{ st = await rpc('get_status', {p_id: me.id}); }
+  catch(e){ if(/로그인/.test(e.message)){ logout(); return; } toast(e.message); return; }
+  render();
+}
+
+function setEntryLabel(btn, main, sub){
+  btn.textContent = main;
+  if(sub){ const s = document.createElement('small'); s.textContent = '(' + sub + ')'; btn.append(s); }
+}
+
+function render(){
+  show('home');
+  const rnd = st.round;
+  document.documentElement.dataset.round = rnd;
+  $('#me').textContent = me.name + ' · ' + me.affiliation;
+  $('#rd').textContent = rnd;
+  const n = st.stamps.length;
+  $('#n').textContent = n; $('#goal').textContent = st.goal;
+  $('#hint').textContent = '부스를 돌며 도장을 모아 보세요 · 받은 도장은 1부·2부 계속 이어져요';
+
+  const prev = seen; seen = new Set(st.stamps);
+  const fresh = prev ? st.stamps.filter(id => !prev.has(id)) : [];
+
+  /* 이동 애니메이션용: 렌더 전 위치 기록 */
+  const old = {};
+  if(prev) document.querySelectorAll('.bt').forEach(e => old[e.dataset.id] = e.getBoundingClientRect().top);
+
+  const byId = {}; st.booths.forEach(b => byId[b.id] = b);
+  const done = st.stamps.map(id => byId[id]).filter(Boolean);              // 최근 찍은 순
+  const rest = st.booths.filter(b => !seen.has(b.id));                     // 이번 부에서 아직 못 받은 부스
+  const box = $('#list'); box.innerHTML = '';
+  [...done, ...rest].forEach(b => {
+    const isDone = seen.has(b.id);
+    const row = document.createElement('div');
+    row.className = 'bt' + (isDone ? ' done' : '') + (fresh.includes(b.id) ? ' new' : '');
+    row.dataset.id = b.id; row.style.setProperty('--h', hue(b.id));
+    const t = document.createElement('div'); t.className = 't'; t.textContent = b.name;
+    const s = document.createElement('small');
+    s.textContent = isDone ? '도장 획득' : '아직 못 받았어요';
+    t.append(s);
+    const c = document.createElement('div'); c.className = 'stp'; c.textContent = emo(b.name);
+    row.append(t, c);
+    if(!isDone) row.onclick = () => openSheet(b.id);
+    box.append(row);
+  });
+
+  /* 위로 끌어올리는 애니메이션 */
+  document.querySelectorAll('.bt').forEach(e => {
+    const o = old[e.dataset.id]; if(o === undefined) return;
+    const d = o - e.getBoundingClientRect().top;
+    if(!d) return;
+    e.style.transition = 'none'; e.style.transform = 'translateY(' + d + 'px)';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      e.style.transition = 'transform .6s cubic-bezier(.2,.8,.2,1)'; e.style.transform = '';
+    }));
+  });
+  if(fresh.length) window.scrollTo({top:0, behavior:'smooth'});
+
+  /* 응모 버튼: "행운권 응모하기 (n부)" */
+  const eb = $('#entryBtn');
+  eb.classList.remove('soft');
+  if(st.entered){ setEntryLabel(eb, '응모 완료'); eb.disabled = true; }
+  else if(st.won){ setEntryLabel(eb, '당첨 완료'); eb.disabled = true; }
+  else if(rnd === 1){ setEntryLabel(eb, '행운권 응모하기'); eb.disabled = false; eb.classList.add('soft'); }   // 1부: 흐리게, 누르면 안내 토스트
+  else{ setEntryLabel(eb, '행운권 응모하기'); eb.disabled = n < st.goal; }
+}
+
+$('#entryBtn').onclick = async () => {
+  if(st && st.round === 1) return toast('2부부터 도장으로 응모 가능');
+  $('#entryBtn').disabled = true;
+  try{ await rpc('submit_entry', {p_id: me.id}); toast('응모 완료!'); }
+  catch(e){ toast(e.message); }
+  await load();
+};
+
+/* ---------- 도장 받기 ---------- */
+function openSheet(pref){
+  const sel = $('#booth'); sel.innerHTML = '';
+  const have = new Set(st.stamps);
+  st.booths.filter(b => !have.has(b.id)).forEach(b => {
+    const o = document.createElement('option'); o.value = b.id; o.textContent = emo(b.name) + ' ' + b.name; sel.append(o);
+  });
+  if(!sel.options.length) return toast('모든 부스에서 도장을 받았어요');
+  if(pref) sel.value = pref;
+  $('#pw').value=''; $('#sheetErr').textContent='';
+  $('#sheet').classList.remove('hide');
+}
+$('#stampBtn').onclick = () => openSheet();
+$('#sheetNo').onclick = () => $('#sheet').classList.add('hide');
+$('#sheetOk').onclick = async () => {
+  const pw = $('#pw').value.trim(); const err = $('#sheetErr'); err.textContent='';
+  if(!pw) return err.textContent = '비밀번호를 입력해 주세요';
+  $('#sheetOk').disabled = true;
+  try{
+    const r = await rpc('give_stamp', {p_id: me.id, p_booth: Number($('#booth').value), p_pw: pw});
+    if(r && r.ok === false) throw new Error(r.msg || '실패했어요');
+    $('#sheet').classList.add('hide'); toast('도장이 찍혔어요'); await load();
+  }catch(e){ err.textContent = e.message; $('#pw').value=''; }
+  $('#sheetOk').disabled = false;
+};
+
+/* 앱으로 돌아올 때 + 15초마다 최신 상태 반영 (부 전환 등) */
+document.addEventListener('visibilitychange', () => { if(!document.hidden && me && me.id) load(); });
+setInterval(() => {
+  if(!document.hidden && me && me.id && $('#sheet').classList.contains('hide')) load();
+}, 15000);
+
+/* ---------- 시작 ---------- */
+if(me && me.id){ show('home'); load(); } else show('login');
+</script>
+</body>
+</html>
