@@ -11,7 +11,8 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{background:var(--bg);color:var(--fg);font-family:'Mona12',system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.6;transition:background .4s}
 main{max-width:420px;margin:0 auto;min-height:100dvh;padding:44px 28px 0;display:flex;flex-direction:column}
-h1{font-size:15px;font-weight:400;letter-spacing:.3em;color:var(--mute)}
+h1{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:400;letter-spacing:.3em;color:var(--mute)}
+.logo{width:26px;height:26px;flex:0 0 auto;image-rendering:pixelated;image-rendering:crisp-edges}
 .hide{display:none!important}
 label{display:block;font-size:13px;color:var(--mute);margin:30px 0 8px}
 input,select{width:100%;font:inherit;color:var(--fg);background:transparent;border:0;border-bottom:1px solid var(--fg);border-radius:0;padding:8px 0;outline:none;appearance:none;-webkit-appearance:none}
@@ -62,7 +63,7 @@ input::placeholder{color:var(--off)}
 <main>
 
 <section id="login" class="hide" style="flex-direction:column;flex:1">
-  <h1>단웅제</h1>
+  <h1><img class="logo" src="logo_gao_32_9x9.png" alt=""><span>단웅제</span></h1>
   <label>소속</label>
   <div class="seg" id="aff">
     <button type="button" data-v="1학년">1학년</button>
@@ -79,7 +80,7 @@ input::placeholder{color:var(--off)}
 </section>
 
 <section id="home" class="hide" style="flex-direction:column;flex:1">
-  <h1>단웅제 · <span id="rd">1</span>부</h1>
+  <h1><img class="logo" src="logo_gao_32_9x9.png" alt=""><span>단웅제 · <span id="rd">1</span>부</span></h1>
   <div class="who"><span id="me"></span><a id="out">로그아웃</a></div>
   <div class="count"><span id="n">0</span><small>/ <span id="goal">2</span></small></div>
   <div class="hint" id="hint">부스를 돌며 도장을 모아 보세요</div>
