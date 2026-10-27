@@ -6,16 +6,20 @@
 <meta name="robots" content="noindex">
 <title>단웅제</title>
 <style>
-@import url('https://cdn.jsdelivr.net/gh/MonadABXY/mona-font/web/mona.css');
+@font-face {
+  font-family: 'Mona12jeju';
+  src: url('Mona12jeju.ttf') format('truetype');
+}
 :root{--bg:#fafaf7;--fg:#141414;--mute:#8d8d86;--line:#e4e4de;--off:#dcdcd5}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{background:var(--bg);color:var(--fg);font-family:'Mona12',system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.6;transition:background .4s}
+html,body{background:var(--bg);color:var(--fg);font-family:'Mona12jeju',system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.6;transition:background .4s}
 main{max-width:420px;margin:0 auto;min-height:100dvh;padding:44px 28px 0;display:flex;flex-direction:column}
 h1{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:400;letter-spacing:.3em;color:var(--mute)}
 .logo{width:26px;height:26px;flex:0 0 auto;image-rendering:pixelated;image-rendering:crisp-edges}
 .hide{display:none!important}
 label{display:block;font-size:13px;color:var(--mute);margin:30px 0 8px}
 input,select{width:100%;font:inherit;color:var(--fg);background:transparent;border:0;border-bottom:1px solid var(--fg);border-radius:0;padding:8px 0;outline:none;appearance:none;-webkit-appearance:none}
+select{padding-right:26px;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1.5 1.5 7 7l5.5-5.5' fill='none' stroke='%23141414' stroke-width='2' stroke-linecap='square'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 4px center;background-size:14px 9px}
 input::placeholder{color:var(--off)}
 .seg{display:flex;gap:8px}
 .seg button{flex:1;font:inherit;font-size:15px;padding:10px 0;background:transparent;color:var(--mute);border:1px solid var(--line);border-radius:0;cursor:pointer}
@@ -31,7 +35,13 @@ input::placeholder{color:var(--off)}
 .who a{color:var(--mute);margin-left:10px;cursor:pointer;text-decoration:underline}
 .count{font-size:72px;line-height:1;margin:44px 0 6px;letter-spacing:-.02em}
 .count small{font-size:20px;color:var(--mute);letter-spacing:0;margin-left:6px}
-.hint{font-size:12px;color:var(--mute);margin-top:10px}
+.hint{font-size:13px;color:var(--mute);margin-top:10px;line-height:1.7}
+.hint .sub{font-size:11px;opacity:.85}
+.lang{display:flex;justify-content:flex-end;margin:-18px 0 22px}
+.lang select{width:auto;font-size:12px;color:var(--mute);border-bottom:1px solid var(--line);padding:4px 24px 4px 2px;background-size:11px 7px;background-position:right 4px center}
+.foot{font-size:11px;color:var(--mute);text-align:center;letter-spacing:.05em}
+.loginfoot{margin-top:auto;padding:28px 0 calc(18px + env(safe-area-inset-bottom))}
+.actions .foot{margin-top:12px}
 .list{margin:24px 0 0;border-top:1px solid var(--line)}
 
 /* 도장 칸 */
@@ -49,6 +59,19 @@ input::placeholder{color:var(--off)}
 @keyframes pop{0%{transform:scale(2) rotate(-35deg);opacity:0}55%{transform:scale(.88) rotate(-8deg);opacity:1}100%{transform:scale(1) rotate(-8deg)}}
 @media (prefers-reduced-motion:reduce){.bt.new .stp{animation:none}}
 
+/* 음료 배너 */
+.drink{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 16px;margin:0;background:#f1eee3;border-bottom:1px solid var(--line);cursor:pointer}
+.drink .t{font-size:15px;min-width:0}
+.drink .t small{display:block;font-size:12px;color:var(--mute)}
+.drink .ic{flex:0 0 auto;font-size:26px;line-height:1}
+.drink.off{cursor:default;background:#f3f3ee}
+.drink.off .t,.drink.off .ic{opacity:.45}
+.drink.off .t{text-decoration:line-through}
+.drink.off .t small{text-decoration:none}
+.dbox{border:1px solid var(--fg);padding:16px;margin:22px 0 4px;font-size:15px;line-height:1.7}
+.dbox.ready{background:#f1eee3}
+.dbox b{font-weight:400;display:block;font-size:13px;color:var(--mute);margin-bottom:4px}
+
 /* 하단 고정 버튼 */
 .actions{position:sticky;bottom:0;margin-top:auto;background:linear-gradient(transparent,var(--bg) 18px);padding:26px 0 calc(16px + env(safe-area-inset-bottom))}
 .gap{height:10px}
@@ -62,33 +85,44 @@ input::placeholder{color:var(--off)}
 <body>
 <main>
 
+<div class="lang">
+  <select id="lang" aria-label="Language">
+    <option value="ko">한국어</option>
+    <option value="en">English</option>
+    <option value="ja">日本語</option>
+    <option value="jeju">제주어</option>
+  </select>
+</div>
+
 <section id="login" class="hide" style="flex-direction:column;flex:1">
   <h1><img class="logo" src="logo_gao_32_9x9.png" alt=""><span>단웅제</span></h1>
-  <label>소속</label>
+  <label data-i18n="lbAff">소속</label>
   <div class="seg" id="aff">
-    <button type="button" data-v="1학년">1학년</button>
-    <button type="button" data-v="2학년">2학년</button>
-    <button type="button" data-v="외부인">외부인</button>
+    <button type="button" data-v="1학년" data-i18n="a1">1학년</button>
+    <button type="button" data-v="2학년" data-i18n="a2">2학년</button>
+    <button type="button" data-v="외부인" data-i18n="a3">방문객</button>
   </div>
-  <label>이름</label>
-  <input id="name" autocomplete="off" maxlength="20" placeholder="홍길동">
-  <label>전화번호</label>
+  <label data-i18n="lbName">이름</label>
+  <input id="name" autocomplete="off" maxlength="20" data-i18n-ph="phName" placeholder="홍길동">
+  <label data-i18n="lbPhone">전화번호</label>
   <input id="phone" type="tel" inputmode="numeric" autocomplete="off" placeholder="010-0000-0000">
-  <p class="note">부정행위 방지를 위해 당첨자들의 전화번호 인증을 요청할 수 있습니다.<br>전화번호는 축제 후 바로 파기됩니다.<br>전화번호 하나당 한 번만 참여할 수 있어요.</p>
-  <button class="btn" id="go">시작</button>
+  <p class="note" data-i18n="note"></p>
+  <button class="btn" id="go" data-i18n="start">시작</button>
   <div class="err" id="loginErr"></div>
+  <div class="foot loginfoot" data-i18n="foot">윤하진 만듦</div>
 </section>
 
 <section id="home" class="hide" style="flex-direction:column;flex:1">
-  <h1><img class="logo" src="logo_gao_32_9x9.png" alt=""><span>단웅제 · <span id="rd">1</span>부</span></h1>
-  <div class="who"><span id="me"></span><a id="out">로그아웃</a></div>
+  <h1><img class="logo" src="logo_gao_32_9x9.png" alt=""><span>단웅제 · <span id="rd"></span></span></h1>
+  <div class="who"><span id="me"></span><a id="out" data-i18n="logout">로그아웃</a></div>
   <div class="count"><span id="n">0</span><small>/ <span id="goal">2</span></small></div>
-  <div class="hint" id="hint">부스를 돌며 도장을 모아 보세요</div>
+  <div class="hint" id="hint"></div>
   <div class="list" id="list"></div>
   <div class="actions">
-    <button class="btn ghost" id="stampBtn">도장 받기</button>
+    <button class="btn ghost" id="stampBtn" data-i18n="stampBtn">도장 받기</button>
     <div class="gap"></div>
     <button class="btn" id="entryBtn" disabled>행운권 응모하기</button>
+    <div class="foot" data-i18n="foot">윤하진 만듦</div>
   </div>
 </section>
 
@@ -96,16 +130,31 @@ input::placeholder{color:var(--off)}
 
 <div class="sheet hide" id="sheet">
   <div>
-    <p>부스를 고르고, 스태프에게 폰을 건네 비밀번호를 입력받으세요.</p>
-    <label>부스</label>
+    <p data-i18n="sheetIntro"></p>
+    <label data-i18n="lbBooth">부스</label>
     <select id="booth"></select>
-    <label>비밀번호 (스태프 입력)</label>
+    <label data-i18n="lbPw">비밀번호 (스태프 입력)</label>
     <input id="pw" type="password" inputmode="numeric" autocomplete="off" placeholder="····">
     <div class="err" id="sheetErr"></div>
     <div style="height:18px"></div>
-    <button class="btn" id="sheetOk">확인</button>
+    <button class="btn" id="sheetOk" data-i18n="ok">확인</button>
     <div class="gap"></div>
-    <button class="btn ghost" id="sheetNo" style="border-color:var(--line)">닫기</button>
+    <button class="btn ghost" id="sheetNo" style="border-color:var(--line)" data-i18n="close">닫기</button>
+  </div>
+</div>
+<div class="sheet hide" id="dsheet">
+  <div>
+    <p data-i18n="dTitle"></p>
+    <div class="dbox" id="dbox"></div>
+    <div id="dpwWrap" class="hide">
+      <label data-i18n="dLbPw">비밀번호 (학생회 스태프 입력)</label>
+      <input id="dpw" type="password" inputmode="numeric" autocomplete="off" placeholder="····">
+    </div>
+    <div class="err" id="dErr"></div>
+    <div style="height:18px"></div>
+    <button class="btn" id="dOk" disabled data-i18n="dOrder">주문하기</button>
+    <div class="gap"></div>
+    <button class="btn ghost" id="dNo" style="border-color:var(--line)" data-i18n="close">닫기</button>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -123,18 +172,217 @@ async function rpc(fn, args){
       headers:{apikey:KEY,'Content-Type':'application/json'},
       body:JSON.stringify(args||{})
     });
-  }catch(e){ throw new Error('인터넷 연결을 확인해 주세요'); }
+  }catch(e){ throw new Error(t('net')); }
   const j = await r.json().catch(()=>null);
-  if(!r.ok) throw new Error((j && j.message) || '오류가 발생했어요');
+  if(!r.ok) throw new Error((j && j.message) || t('generic'));
   return j;
 }
+
+
+/* ---------- 다국어 ---------- */
+const L = {
+ko:{
+  lbAff:'소속', lbName:'이름', lbPhone:'전화번호', a1:'1학년', a2:'2학년', a3:'방문객', phName:'홍길동',
+  note:'부정행위 방지를 위해 당첨자들의 전화번호 인증을 요청할 수 있습니다.<br>전화번호 하나당 한 번만 참여할 수 있어요.',
+  start:'시작', logout:'로그아웃', logoutConfirm:'로그아웃할까요?', part:'{n}부',
+  hint1:'부스를 돌며 도장을 모아 보세요', hint2:'{n}개 이상 모으면 행운권 응모 가능!', hint3:'(받은 도장은 1부·2부 계속 이어져요)',
+  got:'도장 획득', notYet:'아직 못 받았어요', stampBtn:'도장 받기', entryBtn:'행운권 응모하기', entered:'응모 완료', won:'당첨 완료',
+  round2only:'2부부터 도장으로 응모 가능', entryDone:'응모 완료!',
+  sheetIntro:'부스를 고르고, 스태프에게 폰을 건네 비밀번호를 입력받으세요.', lbBooth:'부스', lbPw:'비밀번호 (스태프 입력)', ok:'확인', close:'닫기',
+  allDone:'모든 부스에서 도장을 받았어요', stamped:'도장이 찍혔어요', needPw:'비밀번호를 입력해 주세요', fail:'실패했어요',
+  eAff:'소속을 선택해 주세요', eName:'이름을 입력해 주세요', ePhone:'전화번호를 정확히 입력해 주세요',
+  net:'인터넷 연결을 확인해 주세요', generic:'오류가 발생했어요', foot:'윤하진 만듦',
+  dBanner:'음료수 공짜로 받기!', dBannerSub:'눌러서 안내 보기', dGot:'음료 수령 완료', dGotSub:'이미 받았어요',
+  dTitle:'무료 음료', dInfo:'도장 {n}개 받고 학생회 부스에서 이 화면을 보여주시고 무료로 음료 받아가세요!',
+  dReady:'도장 {n}개 완료!<br>학생회 부스에서 이 화면을 보여주세요.', dProg:'도장 {a} / {b}',
+  dOrder:'주문하기', dLbPw:'비밀번호 (학생회 스태프 입력)', dCancel:'취소', dDone:'음료 받기 완료!'
+},
+en:{
+  lbAff:'Affiliation', lbName:'Name', lbPhone:'Phone number', a1:'1st year', a2:'2nd year', a3:'Visitor', phName:'Gildong Hong',
+  note:'To prevent cheating, winners may be asked to verify their phone number.<br>Each phone number can only participate once.',
+  start:'Start', logout:'Log out', logoutConfirm:'Log out?', part:'Part {n}',
+  hint1:'Visit the booths and collect stamps', hint2:'Collect {n} or more stamps to enter the lucky draw!', hint3:'(Stamps carry over from Part 1 to Part 2)',
+  got:'Stamp collected', notYet:'Not collected yet', stampBtn:'Get a stamp', entryBtn:'Enter lucky draw', entered:'Entered', won:'Won',
+  round2only:'Entry with stamps opens in Part 2', entryDone:'Entry complete!',
+  sheetIntro:'Choose a booth, then hand your phone to a staff member to enter the password.', lbBooth:'Booth', lbPw:'Password (staff only)', ok:'OK', close:'Close',
+  allDone:'You have stamps from every booth', stamped:'Stamp collected!', needPw:'Please enter the password', fail:'Something went wrong',
+  eAff:'Please select your affiliation', eName:'Please enter your name', ePhone:'Please enter a valid phone number',
+  net:'Please check your internet connection', generic:'An error occurred', foot:'Made by Hajin Yoon',
+  m_phoneUsed:'This phone number is already registered. Please log in with the name you first entered.',
+  m_phone:'Please enter a valid mobile number', m_name:'Please enter your name', m_nameLong:'The name is too long', m_aff:'Please select your affiliation',
+  m_pw:'Incorrect password', m_lock:'Too many wrong attempts. Please try again in {n} seconds.',
+  m_r1only:'Part 1 is only open to 1st- and 2nd-year students', m_won:'You have already won and cannot enter again',
+  m_short:'Not enough stamps ({a} / {b})', m_drinkDone:'You have already received your drink',
+  dBanner:'Get a free drink!', dBannerSub:'Tap for details', dGot:'Drink received', dGotSub:'Already claimed',
+  dTitle:'Free drink', dInfo:'Collect {n} stamps, then show this screen at the Student Council booth to get a free drink!',
+  dReady:'{n} stamps collected!<br>Show this screen at the Student Council booth.', dProg:'Stamps {a} / {b}',
+  dOrder:'Order', dLbPw:'Password (Student Council staff only)', dCancel:'Cancel', dDone:'Drink claimed!'
+},
+ja:{
+  lbAff:'所属', lbName:'名前', lbPhone:'電話番号', a1:'1年生', a2:'2年生', a3:'一般来場者', phName:'山田 太郎',
+  note:'不正防止のため、当選者には電話番号の確認をお願いする場合があります。<br>電話番号1つにつき、参加は1回のみです。',
+  start:'はじめる', logout:'ログアウト', logoutConfirm:'ログアウトしますか？', part:'第{n}部',
+  hint1:'ブースを回ってスタンプを集めましょう', hint2:'{n}個以上集めると、ラッキーくじに応募できます！', hint3:'（集めたスタンプは第1部・第2部で引き継がれます）',
+  got:'スタンプ獲得', notYet:'まだもらっていません', stampBtn:'スタンプをもらう', entryBtn:'ラッキーくじに応募', entered:'応募済み', won:'当選済み',
+  round2only:'スタンプでの応募は第2部から', entryDone:'応募完了！',
+  sheetIntro:'ブースを選び、スタッフにスマホを渡してパスワードを入力してもらってください。', lbBooth:'ブース', lbPw:'パスワード（スタッフが入力）', ok:'OK', close:'閉じる',
+  allDone:'すべてのブースでスタンプをもらいました', stamped:'スタンプが押されました', needPw:'パスワードを入力してください', fail:'失敗しました',
+  eAff:'所属を選択してください', eName:'名前を入力してください', ePhone:'電話番号を正しく入力してください',
+  net:'インターネット接続を確認してください', generic:'エラーが発生しました', foot:'制作：ユン・ハジン',
+  m_phoneUsed:'この電話番号はすでに登録されています。最初に入力した名前でログインしてください。',
+  m_phone:'携帯電話番号を正しく入力してください', m_name:'名前を入力してください', m_nameLong:'名前が長すぎます', m_aff:'所属を選択してください',
+  m_pw:'パスワードが違います', m_lock:'パスワードを何度も間違えたため、一時的にロックされました。{n}秒後にもう一度お試しください。',
+  m_r1only:'第1部は1・2年生のみ応募できます', m_won:'すでに当選しているため、再度応募できません',
+  m_short:'スタンプが足りません（{a} / {b}）', m_drinkDone:'ドリンクはすでに受け取り済みです',
+  dBanner:'ドリンク無料プレゼント！', dBannerSub:'タップして案内を見る', dGot:'ドリンク受け取り済み', dGotSub:'すでに受け取りました',
+  dTitle:'無料ドリンク', dInfo:'スタンプを{n}個集めて、生徒会ブースでこの画面を見せると無料でドリンクがもらえます！',
+  dReady:'スタンプ{n}個達成！<br>生徒会ブースでこの画面を見せてください。', dProg:'スタンプ {a} / {b}',
+  dOrder:'注文する', dLbPw:'パスワード（生徒会スタッフが入力）', dCancel:'キャンセル', dDone:'ドリンクを受け取りました！'
+},
+jeju:{
+  lbAff: '소속', 
+  lbName: '일름', 
+  lbPhone: '전화번호', 
+  a1: '1학년', 
+  a2: '2학년', 
+  a3: '방문겍', 
+  phName: '홍길동',
+  note: '부정헹위 막으젠 당첨뒌 사름덜 전화번호 인증렌  수 잇수다.<br>전화번호 나당 딱  번만 여여집네다.',
+  start: '시작', 
+  logout: '로그아웃', 
+  logoutConfirm: '로그아웃ᄒᆞ쿠과?', 
+  part: '{n}부',
+  hint1: '부스 돌아뎅기멍 도장 모돵 봅서', 
+  hint2: '{n}개 넘게 모두민 헹운권 응모 뒙네다!', 
+  hint3: '(받인 도장은 1부·2부 계속 이어졈수다)',
+  got: '도장 받앗저', 
+  notYet: '아적 못 받앗수다', 
+  stampBtn: '도장 받기', 
+  entryBtn: '헹운권 응모기', 
+  entered: '응모 쳣저', 
+  won: '당첨 뒛저',
+  round2only: '2부부떠 도장으로 응모 뒘', 
+  entryDone: '응모 쳣저!',
+  sheetIntro: '부스 골랑, 스태프안티 폰 넹겨줭 비밀번호 치렌 서.', 
+  lbBooth: '부스', 
+  lbPw: '비밀번호 (스태프 치는 디)', 
+  ok: '확인', 
+  close: '더끄기',
+  allDone: '딱 부스에서 도장 다 받앗저', 
+  stamped: '도장 찍어졋저', 
+  needPw: '비밀번호 쳐 줍서', 
+  fail: '실패헷저',
+  eAff: '소속 골라 줍서', 
+  eName: '일름 쳐 줍서', 
+  ePhone: '전화번호 졸바로 쳐 줍서',
+  net: '인터넷 멩걸아졈신지 확인헤 봅서', 
+  generic: '오류 낫저', 
+  foot: '윤하진 멩긂',
+  dBanner: '공거로 음료 받기!', 
+  dBannerSub: '눌렁 안내 보기', 
+  dGot: '음료 다 받앗저', 
+  dGotSub: '써 받앗저',
+  dTitle: '공거 음료', 
+  dInfo: '도장 {n}개 받앙 셍회 부스 강 이 화멘 봬줭 공거로 음료 받앙 갑서!',
+  dReady: '도장 {n}개 다 헷저!<br>셍회 부스 강 이 화멘 봬 줍서.', 
+  dProg: '도장 {a} / {b}',
+  dOrder: '주문기', 
+  dLbPw: '비밀번호 (셍회 스태프 치는 디)', 
+  dCancel: '취소', 
+  dDone: '음료 다 받앗저!'
+}
+};
+
+const BN = {
+ en:{'그림과이야기부':'Picture & Story Club','도서부':'Library Club','문항해설지제작부':'Question Commentary Club','지구과학실험탐구부':'Earth Science Lab Club','건축설계디자인부':'Architecture Design Club','교지편집부':'School Magazine Club','물리실험탐구부':'Physics Lab Club','미술부':'Art Club','방송부':'Broadcasting Club','밴드부':'Band','보디빌딩부':'Bodybuilding Club','사물놀이부':'Samulnori Club','사진부':'Photography Club','생명과학실험탐구부':'Life Science Lab Club','생명윤리탐구부':'Bioethics Club','생명화학융합탐구부':'Bio-Chemistry Convergence Club','세계도시연구부':'World Cities Club','수학논리퍼즐부':'Math Logic Puzzle Club','신문부':'Newspaper Club','역사탐구부':'History Club','연극부':'Drama Club','영자신문부':'English Newspaper Club','오케스트라':'Orchestra','인공지능탐구활동부':'AI Exploration Club','인문학탐구부':'Humanities Club','일본문화탐구부':'Japanese Culture Club','전략보드게임연구부':'Strategy Board Game Club','축구부':'Soccer Club','통계활용부':'Statistics Club','화학실험탐구부':'Chemistry Lab Club','영어원서읽기부':'English Book Reading Club','인공지능캡스톤디자인부':'AI Capstone Design Club','의생명과학탐구부':'Biomedical Science Club'},
+ ja:{'그림과이야기부':'絵と物語部','도서부':'図書部','문항해설지제작부':'問題解説集制作部','지구과학실험탐구부':'地球科学実験探究部','건축설계디자인부':'建築設計デザイン部','교지편집부':'校誌編集部','물리실험탐구부':'物理実験探究部','미술부':'美術部','방송부':'放送部','밴드부':'バンド部','보디빌딩부':'ボディビル部','사물놀이부':'サムルノリ部','사진부':'写真部','생명과학실험탐구부':'生命科学実験探究部','생명윤리탐구부':'生命倫理探究部','생명화학융합탐구부':'生命化学融合探究部','세계도시연구부':'世界都市研究部','수학논리퍼즐부':'数学論理パズル部','신문부':'新聞部','역사탐구부':'歴史探究部','연극부':'演劇部','영자신문부':'英字新聞部','오케스트라':'オーケストラ','인공지능탐구활동부':'人工知能探究活動部','인문학탐구부':'人文学探究部','일본문화탐구부':'日本文化探究部','전략보드게임연구부':'戦略ボードゲーム研究部','축구부':'サッカー部','통계활용부':'統計活用部','화학실험탐구부':'化学実験探究部','영어원서읽기부':'英語原書読書部','인공지능캡스톤디자인부':'人工知能キャップストーンデザイン部','의생명과학탐구부':'医生命科学探究部'},
+ jeju: {
+  '그림과이야기부': '그림광옛말부',
+  '도서부': '도서부',
+  '문항해설지제작부': '문항헤설지제작부',
+  '지구과학실험탐구부': '지구과학실험탐구부',
+  '건축설계디자인부': '건축설게디자인부',
+  '교지편집부': '교지편집부',
+  '물리실험탐구부': '물리실험탐구부',
+  '미술부': '미술부',
+  '방송부': '방송부',
+  '밴드부': '밴드부',
+  '보디빌딩부': '보디빌딩부',
+  '사물놀이부': '물놀이부',
+  '사진부': '사진부',
+  '생명과학실험탐구부': '셍멩과학실험탐구부',
+  '생명윤리탐구부': '셍멩윤리탐구부',
+  '생명화학융합탐구부': '셍멩화학융합탐구부',
+  '세계도시연구부': '세게도시연구부',
+  '수학논리퍼즐부': '수학논리퍼즐부',
+  '신문부': '신문부',
+  '역사탐구부': '역탐구부',
+  '연극부': '연극부',
+  '영자신문부': '영신문부',
+  '오케스트라': '오케스트라',
+  '인공지능탐구활동부': '인공지능탐구활동부',
+  '인문학탐구부': '인문학탐구부',
+  '일본문화탐구부': '일본문화탐구부',
+  '전략보드게임연구부': '전략보드게임연구부',
+  '축구부': '축구부',
+  '통계활용부': '통게활용부',
+  '화학실험탐구부': '화학실험탐구부',
+  '영어원서읽기부': '영어원서읽기부',
+  '인공지능캡스톤디자인부': '인공지능캡스톤디자인부',
+  '의생명과학탐구부': '의셍멩과학탐구부'
+ }
+};
+
+let lang = 'ko';
+try{ const sv = localStorage.getItem('dwj_lang'); if(sv && L[sv]) lang = sv; }catch(e){}
+function t(k, v){
+  let s = (L[lang] && L[lang][k]) || L.ko[k] || k;
+  if(v) for(const x in v) s = s.replace('{'+x+'}', v[x]);
+  return s;
+}
+const bname = n => (BN[lang] && BN[lang][n]) || n;
+const AFFKEY = {'1학년':'a1','2학년':'a2','외부인':'a3'};
+const affLabel = a => AFFKEY[a] ? t(AFFKEY[a]) : a;
+
+/* 서버가 돌려주는 한국어 오류 메시지 → 현재 언어 */
+function tmsg(m){
+  if(lang==='ko' || lang==='jeju' || !m) return m;
+  if(/이미 등록된 전화번호/.test(m)) return t('m_phoneUsed');
+  if(/휴대폰 번호/.test(m)) return t('m_phone');
+  if(/이름이 너무/.test(m)) return t('m_nameLong');
+  if(/이름을 입력/.test(m)) return t('m_name');
+  if(/소속을 선택/.test(m)) return t('m_aff');
+  if(/여러 번 틀려서/.test(m)){ const x=m.match(/(\d+)초/); return t('m_lock',{n:x?x[1]:''}); }
+  if(/비밀번호가 틀/.test(m)) return t('m_pw');
+  if(/1부는 1·2학년/.test(m)) return t('m_r1only');
+  if(/이미 당첨/.test(m)) return t('m_won');
+  if(/이미 음료/.test(m)) return t('m_drinkDone');
+  if(/도장이 부족/.test(m)){ const x=m.match(/\((\d+) \/ (\d+)\)/); return t('m_short',{a:x?x[1]:'',b:x?x[2]:''}); }
+  return m;
+}
+
+function applyLang(){
+  document.documentElement.lang = lang==='jeju' ? 'ko' : lang;
+  document.querySelectorAll('[data-i18n]').forEach(e => e.innerHTML = t(e.dataset.i18n));
+  document.querySelectorAll('[data-i18n-ph]').forEach(e => e.placeholder = t(e.dataset.i18nPh));
+  $('#lang').value = lang;
+  $('#loginErr').textContent=''; $('#sheetErr').textContent='';
+  if(me && me.id && st) render();
+  if(!$('#sheet').classList.contains('hide')) fillBooths($('#booth').value);
+  if(!$('#dsheet').classList.contains('hide')) renderDrinkSheet();
+}
+$('#lang').onchange = e => {
+  lang = e.target.value;
+  try{ localStorage.setItem('dwj_lang', lang); }catch(e){}
+  applyLang();
+};
 
 /* 부스 이름 → 이모티콘 */
 const EMOJI = {
   '그림과이야기부':'🖼️','도서부':'📚','문항해설지제작부':'📝','지구과학실험탐구부':'🌏','건축설계디자인부':'🏠',
   '교지편집부':'📒','물리실험탐구부':'🧲','미술부':'🎨','방송부':'🎙️','밴드부':'🎸',
   '보디빌딩부':'💪','사물놀이부':'🥁','사진부':'📷','생명과학실험탐구부':'🧬','생명윤리탐구부':'⚖️',
-  '생명화학융합탐구부':'🧪','세계도시연구부':'🌆','수학 논리 퍼즐부':'🧩','신문부':'🗞️','역사탐구부':'🏛️',
+  '생명화학융합탐구부':'🧪','세계도시연구부':'🌆','수학논리퍼즐부':'🧩','신문부':'🗞️','역사탐구부':'🏛️',
   '연극부':'🎭','영자신문부':'🔤','오케스트라':'🎻','인공지능탐구활동부':'🤖','인문학탐구부':'🧠',
   '일본문화탐구부':'🍣','전략보드게임연구부':'♟️','축구부':'⚽','통계활용부':'📊','화학실험탐구부':'⚗️',
   '영어원서읽기부':'📕','인공지능캡스톤디자인부':'💻','의생명과학탐구부':'💉'
@@ -142,12 +390,12 @@ const EMOJI = {
 const emo = name => EMOJI[name] || '⭐';
 const hue = id => (id * 47) % 360;
 
-let me = null, st = null, aff = '', seen = null, seenRound = null;
+let me = null, st = null, dk = null, aff = '', seen = null, seenRound = null;
 try{ me = JSON.parse(localStorage.getItem('dwj_me') || 'null'); }catch(e){}
 
 function show(id){ ['login','home'].forEach(x => { const e=$('#'+x); e.classList.toggle('hide', x!==id); e.style.display = x===id ? 'flex' : 'none'; }); }
-function toast(t){ const e=$('#toast'); e.textContent=t; e.classList.add('on'); setTimeout(()=>e.classList.remove('on'),1900); }
-function logout(){ try{localStorage.removeItem('dwj_me');}catch(e){} me=null; st=null; seen=null; seenRound=null; show('login'); }
+function toast(m){ const e=$('#toast'); e.textContent=m; e.classList.add('on'); setTimeout(()=>e.classList.remove('on'),1900); }
+function logout(){ try{localStorage.removeItem('dwj_me');}catch(e){} me=null; st=null; dk=null; seen=null; seenRound=null; show('login'); }
 
 /* ---------- 로그인 ---------- */
 document.querySelectorAll('#aff button').forEach(b => b.onclick = () => {
@@ -162,24 +410,26 @@ $('#phone').addEventListener('input', e => {
 $('#go').onclick = async () => {
   const name = $('#name').value.trim(), phone = $('#phone').value.replace(/\D/g,'');
   const err = $('#loginErr'); err.textContent = '';
-  if(!aff) return err.textContent = '소속을 선택해 주세요';
-  if(!name) return err.textContent = '이름을 입력해 주세요';
-  if(phone.length<10) return err.textContent = '전화번호를 정확히 입력해 주세요';
+  if(!aff) return err.textContent = t('eAff');
+  if(!name) return err.textContent = t('eName');
+  if(phone.length<10) return err.textContent = t('ePhone');
   $('#go').disabled = true;
   try{
     me = await rpc('login', {p_affiliation:aff, p_name:name, p_phone:phone});
     try{ localStorage.setItem('dwj_me', JSON.stringify(me)); }catch(e){}
     await load();
-  }catch(e){ err.textContent = e.message; }
+  }catch(e){ err.textContent = tmsg(e.message); }
   $('#go').disabled = false;
 };
-$('#out').onclick = () => { if(confirm('로그아웃할까요?')) logout(); };
+$('#out').onclick = () => { if(confirm(t('logoutConfirm'))) logout(); };
 
 /* ---------- 홈 ---------- */
 async function load(){
   try{ st = await rpc('get_status', {p_id: me.id}); }
-  catch(e){ if(/로그인/.test(e.message)){ logout(); return; } toast(e.message); return; }
+  catch(e){ if(/로그인/.test(e.message)){ logout(); return; } toast(tmsg(e.message)); return; }
+  try{ dk = await rpc('get_drink', {p_id: me.id}); }catch(e){ dk = null; }   // SQL(v8) 미적용이면 배너 숨김
   render();
+  if(!$('#dsheet').classList.contains('hide')) renderDrinkSheet();
 }
 
 function setEntryLabel(btn, main, sub){
@@ -191,11 +441,11 @@ function render(){
   show('home');
   const rnd = st.round;
   document.documentElement.dataset.round = rnd;
-  $('#me').textContent = me.name + ' · ' + me.affiliation;
-  $('#rd').textContent = rnd;
+  $('#me').textContent = me.name + ' · ' + affLabel(me.affiliation);
+  $('#rd').textContent = t('part',{n:rnd});
   const n = st.stamps.length;
   $('#n').textContent = n; $('#goal').textContent = st.goal;
-  $('#hint').textContent = '부스를 돌며 도장을 모아 보세요 · 받은 도장은 1부·2부 계속 이어져요';
+  $('#hint').innerHTML = t('hint1') + '<br>' + t('hint2',{n:st.goal}) + '<br><span class="sub">' + t('hint3') + '</span>';
 
   const prev = seen; seen = new Set(st.stamps);
   const fresh = prev ? st.stamps.filter(id => !prev.has(id)) : [];
@@ -208,17 +458,26 @@ function render(){
   const done = st.stamps.map(id => byId[id]).filter(Boolean);              // 최근 찍은 순
   const rest = st.booths.filter(b => !seen.has(b.id));                     // 이번 부에서 아직 못 받은 부스
   const box = $('#list'); box.innerHTML = '';
+  if(dk){
+    const d = document.createElement('div'); d.className = 'drink' + (dk.got ? ' off' : '');
+    const dt = document.createElement('div'); dt.className = 't'; dt.textContent = dk.got ? t('dGot') : t('dBanner');
+    const ds = document.createElement('small'); ds.textContent = dk.got ? t('dGotSub') : t('dBannerSub'); dt.append(ds);
+    const di = document.createElement('div'); di.className = 'ic'; di.textContent = '🥤';
+    d.append(dt, di);
+    if(!dk.got) d.onclick = openDrink;
+    box.append(d);
+  }
   [...done, ...rest].forEach(b => {
     const isDone = seen.has(b.id);
     const row = document.createElement('div');
     row.className = 'bt' + (isDone ? ' done' : '') + (fresh.includes(b.id) ? ' new' : '');
     row.dataset.id = b.id; row.style.setProperty('--h', hue(b.id));
-    const t = document.createElement('div'); t.className = 't'; t.textContent = b.name;
+    const tt = document.createElement('div'); tt.className = 't'; tt.textContent = bname(b.name);
     const s = document.createElement('small');
-    s.textContent = isDone ? '도장 획득' : '아직 못 받았어요';
-    t.append(s);
+    s.textContent = isDone ? t('got') : t('notYet');
+    tt.append(s);
     const c = document.createElement('div'); c.className = 'stp'; c.textContent = emo(b.name);
-    row.append(t, c);
+    row.append(tt, c);
     if(!isDone) row.onclick = () => openSheet(b.id);
     box.append(row);
   });
@@ -238,29 +497,77 @@ function render(){
   /* 응모 버튼: "행운권 응모하기 (n부)" */
   const eb = $('#entryBtn');
   eb.classList.remove('soft');
-  if(st.entered){ setEntryLabel(eb, '응모 완료'); eb.disabled = true; }
-  else if(st.won){ setEntryLabel(eb, '당첨 완료'); eb.disabled = true; }
-  else if(rnd === 1){ setEntryLabel(eb, '행운권 응모하기'); eb.disabled = false; eb.classList.add('soft'); }   // 1부: 흐리게, 누르면 안내 토스트
-  else{ setEntryLabel(eb, '행운권 응모하기'); eb.disabled = n < st.goal; }
+  if(st.entered){ setEntryLabel(eb, t('entered')); eb.disabled = true; }
+  else if(st.won){ setEntryLabel(eb, t('won')); eb.disabled = true; }
+  else if(rnd === 1){ setEntryLabel(eb, t('entryBtn')); eb.disabled = false; eb.classList.add('soft'); }   // 1부: 흐리게, 누르면 안내 토스트
+  else{ setEntryLabel(eb, t('entryBtn')); eb.disabled = n < st.goal; }
 }
 
 $('#entryBtn').onclick = async () => {
-  if(st && st.round === 1) return toast('2부부터 도장으로 응모 가능');
+  if(st && st.round === 1) return toast(t('round2only'));
   $('#entryBtn').disabled = true;
-  try{ await rpc('submit_entry', {p_id: me.id}); toast('응모 완료!'); }
-  catch(e){ toast(e.message); }
+  try{ await rpc('submit_entry', {p_id: me.id}); toast(t('entryDone')); }
+  catch(e){ toast(tmsg(e.message)); }
   await load();
 };
 
+/* ---------- 무료 음료 ---------- */
+let dStep = 0;   // 0: 안내, 1: 스태프 비밀번호 입력
+function renderDrinkSheet(){
+  if(!dk) return;
+  const ready = dk.count >= dk.goal;
+  const box = $('#dbox');
+  box.className = 'dbox' + (ready ? ' ready' : '');
+  box.innerHTML = '';
+  if(ready){
+    const w = document.createElement('b'); w.textContent = me.name + ' · ' + affLabel(me.affiliation); box.append(w);
+    const m = document.createElement('div'); m.innerHTML = t('dReady',{n:dk.goal}); box.append(m);
+  }else{
+    const m = document.createElement('div'); m.textContent = t('dInfo',{n:dk.goal}); box.append(m);
+  }
+  const p = document.createElement('div'); p.style.cssText = 'margin-top:10px;font-size:13px;color:var(--mute)';
+  p.textContent = t('dProg',{a:Math.min(dk.count,dk.goal), b:dk.goal}); box.append(p);
+  $('#dpwWrap').classList.toggle('hide', dStep !== 1);
+  $('#dOk').textContent = dStep === 1 ? t('ok') : t('dOrder');
+  $('#dOk').disabled = !ready;
+  $('#dNo').textContent = dStep === 1 ? t('dCancel') : t('close');
+}
+function openDrink(){
+  if(!dk || dk.got) return;
+  dStep = 0; $('#dpw').value = ''; $('#dErr').textContent = '';
+  renderDrinkSheet();
+  $('#dsheet').classList.remove('hide');
+}
+$('#dNo').onclick = () => {
+  if(dStep === 1){ dStep = 0; $('#dpw').value=''; $('#dErr').textContent=''; renderDrinkSheet(); }
+  else $('#dsheet').classList.add('hide');
+};
+$('#dOk').onclick = async () => {
+  const err = $('#dErr'); err.textContent = '';
+  if(dStep === 0){ dStep = 1; renderDrinkSheet(); $('#dpw').focus(); return; }
+  const pw = $('#dpw').value.trim();
+  if(!pw) return err.textContent = t('needPw');
+  $('#dOk').disabled = true;
+  try{
+    const r = await rpc('claim_drink', {p_id: me.id, p_pw: pw});
+    if(r && r.ok === false) throw new Error(r.msg || t('fail'));
+    $('#dsheet').classList.add('hide'); dStep = 0; toast(t('dDone')); await load();
+  }catch(e){ err.textContent = tmsg(e.message); $('#dpw').value = ''; $('#dOk').disabled = false; }
+};
+$('#dpw').addEventListener('keydown', e => { if(e.key === 'Enter') $('#dOk').click(); });
+
 /* ---------- 도장 받기 ---------- */
-function openSheet(pref){
+function fillBooths(pref){
   const sel = $('#booth'); sel.innerHTML = '';
   const have = new Set(st.stamps);
   st.booths.filter(b => !have.has(b.id)).forEach(b => {
-    const o = document.createElement('option'); o.value = b.id; o.textContent = emo(b.name) + ' ' + b.name; sel.append(o);
+    const o = document.createElement('option'); o.value = b.id; o.textContent = emo(b.name) + ' ' + bname(b.name); sel.append(o);
   });
-  if(!sel.options.length) return toast('모든 부스에서 도장을 받았어요');
   if(pref) sel.value = pref;
+}
+function openSheet(pref){
+  fillBooths(pref);
+  if(!$('#booth').options.length) return toast(t('allDone'));
   $('#pw').value=''; $('#sheetErr').textContent='';
   $('#sheet').classList.remove('hide');
 }
@@ -268,23 +575,24 @@ $('#stampBtn').onclick = () => openSheet();
 $('#sheetNo').onclick = () => $('#sheet').classList.add('hide');
 $('#sheetOk').onclick = async () => {
   const pw = $('#pw').value.trim(); const err = $('#sheetErr'); err.textContent='';
-  if(!pw) return err.textContent = '비밀번호를 입력해 주세요';
+  if(!pw) return err.textContent = t('needPw');
   $('#sheetOk').disabled = true;
   try{
     const r = await rpc('give_stamp', {p_id: me.id, p_booth: Number($('#booth').value), p_pw: pw});
-    if(r && r.ok === false) throw new Error(r.msg || '실패했어요');
-    $('#sheet').classList.add('hide'); toast('도장이 찍혔어요'); await load();
-  }catch(e){ err.textContent = e.message; $('#pw').value=''; }
+    if(r && r.ok === false) throw new Error(r.msg || t('fail'));
+    $('#sheet').classList.add('hide'); toast(t('stamped')); await load();
+  }catch(e){ err.textContent = tmsg(e.message); $('#pw').value=''; }
   $('#sheetOk').disabled = false;
 };
 
 /* 앱으로 돌아올 때 + 15초마다 최신 상태 반영 (부 전환 등) */
 document.addEventListener('visibilitychange', () => { if(!document.hidden && me && me.id) load(); });
 setInterval(() => {
-  if(!document.hidden && me && me.id && $('#sheet').classList.contains('hide')) load();
+  if(!document.hidden && me && me.id && $('#sheet').classList.contains('hide') && $('#dsheet').classList.contains('hide')) load();
 }, 15000);
 
 /* ---------- 시작 ---------- */
+applyLang();
 if(me && me.id){ show('home'); load(); } else show('login');
 </script>
 </body>
