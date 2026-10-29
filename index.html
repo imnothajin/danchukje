@@ -65,7 +65,7 @@ input::placeholder{color:var(--off)}
 .drink .t{font-size:15px;min-width:0}
 .drink .t small{display:block;font-size:12px;color:var(--mute)}
 .drink .ic{flex:0 0 auto;font-size:26px;line-height:1}
-.drink.off{cursor:default;background:#f3f3ee}
+.drink.off{cursor:pointer;background:#f3f3ee}
 .drink.off .t,.drink.off .ic{opacity:.45}
 .drink.off .t{text-decoration:line-through}
 .drink.off .t small{text-decoration:none}
@@ -199,7 +199,7 @@ ko:{
   dBanner:'음료수 공짜로 받기!', dBannerSub:'눌러서 안내 보기', dGot:'음료 수령 완료', dGotSub:'이미 받았어요',
   dTitle:'무료 음료', dInfo:'도장 {n}개 받고 학생회 부스에서 이 화면을 보여주시고 무료로 음료 받아가세요!',
   dReady:'도장 {n}개 완료!<br>학생회 부스에서 이 화면을 보여주세요.', dProg:'도장 {a} / {b}',
-  dOrder:'주문하기', dLbPw:'비밀번호 (학생회 스태프 입력)', dCancel:'취소', dDone:'음료 받기 완료!'
+  dOrder:'주문하기', dOrdered:'주문 완료', dLbPw:'비밀번호 (학생회 스태프 입력)', dCancel:'취소', dDone:'음료 받기 완료!'
 },
 en:{
   lbAff:'Affiliation', lbName:'Name', lbPhone:'Phone number', a1:'1st year', a2:'2nd year', a3:'Visitor', phName:'홍길동',
@@ -222,7 +222,7 @@ en:{
   dBanner:'Get a free drink!', dBannerSub:'Tap for details', dGot:'Drink received', dGotSub:'Already claimed',
   dTitle:'Free drink', dInfo:'Collect {n} stamps, then show this screen at the Student Council booth to get a free drink!',
   dReady:'{n} stamps collected!<br>Show this screen at the Student Council booth.', dProg:'Stamps {a} / {b}',
-  dOrder:'Order', dLbPw:'Password (Student Council staff only)', dCancel:'Cancel', dDone:'Drink claimed!'
+  dOrder:'Order', dOrdered:'Order complete', dLbPw:'Password (Student Council staff only)', dCancel:'Cancel', dDone:'Drink claimed!'
 },
 ja:{
   lbAff:'所属', lbName:'名前', lbPhone:'電話番号', a1:'1年生', a2:'2年生', a3:'一般来場者', phName:'홍길동',
@@ -245,7 +245,7 @@ ja:{
   dBanner:'ドリンク無料プレゼント！', dBannerSub:'タップして案内を見る', dGot:'ドリンク受け取り済み', dGotSub:'すでに受け取りました',
   dTitle:'無料ドリンク', dInfo:'スタンプを{n}個集めて、生徒会ブースでこの画面を見せると無料でドリンクがもらえます！',
   dReady:'スタンプ{n}個達成！<br>生徒会ブースでこの画面を見せてください。', dProg:'スタンプ {a} / {b}',
-  dOrder:'注文する', dLbPw:'パスワード（生徒会スタッフが入力）', dCancel:'キャンセル', dDone:'ドリンクを受け取りました！'
+  dOrder:'注文する', dOrdered:'注文完了', dLbPw:'パスワード（生徒会スタッフが入力）', dCancel:'キャンセル', dDone:'ドリンクを受け取りました！'
 },
 jeju:{
   lbAff: '소속', 
@@ -295,6 +295,7 @@ jeju:{
   dReady: '도장 {n}개 다 헷저!<br>셍회 부스 강 이 화멘 봬 줍서.', 
   dProg: '도장 {a} / {b}',
   dOrder: '주문기', 
+  dOrdered: '주문 다 헷저', 
   dLbPw: '비밀번호 (셍회 스태프 치는 디)', 
   dCancel: '취소', 
   dDone: '음료 다 받앗저!'
@@ -483,7 +484,7 @@ function render(){
     const ds = document.createElement('small'); ds.textContent = dk.got ? t('dGotSub') : t('dBannerSub'); dt.append(ds);
     const di = document.createElement('div'); di.className = 'ic'; di.textContent = '🥤';
     d.append(dt, di);
-    if(!dk.got) d.onclick = openDrink;
+    d.onclick = openDrink;
     box.append(d);
   }
   [...done, ...rest].forEach(b => {
@@ -547,12 +548,13 @@ function renderDrinkSheet(){
   const p = document.createElement('div'); p.style.cssText = 'margin-top:10px;font-size:13px;color:var(--mute)';
   p.textContent = t('dProg',{a:Math.min(dk.count,dk.goal), b:dk.goal}); box.append(p);
   $('#dpwWrap').classList.toggle('hide', dStep !== 1);
-  $('#dOk').textContent = dStep === 1 ? t('ok') : t('dOrder');
-  $('#dOk').disabled = !ready;
+  if(dk.got){ dStep = 0; $('#dpwWrap').classList.add('hide'); }
+  $('#dOk').textContent = dk.got ? t('dOrdered') : (dStep === 1 ? t('ok') : t('dOrder'));
+  $('#dOk').disabled = dk.got || !ready;
   $('#dNo').textContent = dStep === 1 ? t('dCancel') : t('close');
 }
 function openDrink(){
-  if(!dk || dk.got) return;
+  if(!dk) return;
   dStep = 0; $('#dpw').value = ''; $('#dErr').textContent = '';
   renderDrinkSheet();
   $('#dsheet').classList.remove('hide');
