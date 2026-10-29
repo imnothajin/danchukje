@@ -31,6 +31,7 @@ input::placeholder{color:var(--off)}
 .btn:disabled{color:#fff;background:var(--off);border-color:var(--off);cursor:default}
 .note{font-size:12px;color:var(--mute);line-height:1.8;margin:30px 0 22px}
 .err{font-size:13px;color:#b3261e;min-height:20px;margin-top:14px}
+.warn{font-size:13px;color:#d32f2f;line-height:1.7;margin:-8px 0 22px}
 .who{font-size:13px;color:var(--mute);margin-top:6px}
 .who a{color:var(--mute);margin-left:10px;cursor:pointer;text-decoration:underline}
 .count{font-size:72px;line-height:1;margin:44px 0 6px;letter-spacing:-.02em}
@@ -103,10 +104,11 @@ input::placeholder{color:var(--off)}
     <button type="button" data-v="외부인" data-i18n="a3">방문객</button>
   </div>
   <label data-i18n="lbName">이름</label>
-  <input id="name" autocomplete="off" maxlength="20" data-i18n-ph="phName" placeholder="홍길동">
+  <input id="name" autocomplete="off" maxlength="5" data-i18n-ph="phName" placeholder="홍길동">
   <label data-i18n="lbPhone">전화번호</label>
   <input id="phone" type="tel" inputmode="numeric" autocomplete="off" placeholder="010-0000-0000">
   <p class="note" data-i18n="note"></p>
+  <p class="warn" data-i18n="warn"></p>
   <button class="btn" id="go" data-i18n="start">시작</button>
   <div class="err" id="loginErr"></div>
   <div class="foot loginfoot" data-i18n="foot">윤하진 만듦</div>
@@ -184,6 +186,8 @@ const L = {
 ko:{
   lbAff:'소속', lbName:'이름', lbPhone:'전화번호', a1:'1학년', a2:'2학년', a3:'방문객', phName:'홍길동',
   note:'부정행위 방지를 위해 당첨자들의 전화번호 인증을 요청할 수 있습니다.<br>전화번호 하나당 한 번만 참여할 수 있어요.',
+  warn:'실제 본명과 전화번호를 적지 않을 시 계정이 제재될 수 있습니다.',
+  eNameKo:'이름은 한글(완성형)로만 입력해 주세요. 초성·띄어쓰기·영문은 안 돼요', eNameLen:'이름은 최대 5글자까지 입력할 수 있어요', eNameBad:'사용할 수 없는 이름이에요',
   start:'시작', logout:'로그아웃', logoutConfirm:'로그아웃할까요?', part:'{n}부',
   hint1:'부스를 돌며 도장을 모아 보세요', hint2:'{n}개 이상 모으면 행운권 응모 가능!', hint3:'(받은 도장은 1부·2부 계속 이어져요)',
   got:'도장 획득', notYet:'아직 못 받았어요', stampBtn:'도장 받기', entryBtn:'행운권 응모하기', entered:'응모 완료', won:'당첨 완료',
@@ -198,8 +202,10 @@ ko:{
   dOrder:'주문하기', dLbPw:'비밀번호 (학생회 스태프 입력)', dCancel:'취소', dDone:'음료 받기 완료!'
 },
 en:{
-  lbAff:'Affiliation', lbName:'Name', lbPhone:'Phone number', a1:'1st year', a2:'2nd year', a3:'Visitor', phName:'Gildong Hong',
+  lbAff:'Affiliation', lbName:'Name', lbPhone:'Phone number', a1:'1st year', a2:'2nd year', a3:'Visitor', phName:'홍길동',
   note:'To prevent cheating, winners may be asked to verify their phone number.<br>Each phone number can only participate once.',
+  warn:'Your account may be suspended if you do not enter your real name and phone number.',
+  eNameKo:'Please enter your name in Korean (Hangul) letters only: no initials, spaces or Latin letters', eNameLen:'Name can be up to 5 characters', eNameBad:'This name is not allowed',
   start:'Start', logout:'Log out', logoutConfirm:'Log out?', part:'Part {n}',
   hint1:'Visit the booths and collect stamps', hint2:'Collect {n} or more stamps to enter the lucky draw!', hint3:'(Stamps carry over from Part 1 to Part 2)',
   got:'Stamp collected', notYet:'Not collected yet', stampBtn:'Get a stamp', entryBtn:'Enter lucky draw', entered:'Entered', won:'Won',
@@ -219,8 +225,10 @@ en:{
   dOrder:'Order', dLbPw:'Password (Student Council staff only)', dCancel:'Cancel', dDone:'Drink claimed!'
 },
 ja:{
-  lbAff:'所属', lbName:'名前', lbPhone:'電話番号', a1:'1年生', a2:'2年生', a3:'一般来場者', phName:'山田 太郎',
+  lbAff:'所属', lbName:'名前', lbPhone:'電話番号', a1:'1年生', a2:'2年生', a3:'一般来場者', phName:'홍길동',
   note:'不正防止のため、当選者には電話番号の確認をお願いする場合があります。<br>電話番号1つにつき、参加は1回のみです。',
+  warn:'実名と電話番号を正しく入力しない場合、アカウントが制限されることがあります。',
+  eNameKo:'お名前はハングル（完成形）のみで入力してください', eNameLen:'お名前は最大5文字までです', eNameBad:'この名前は使用できません',
   start:'はじめる', logout:'ログアウト', logoutConfirm:'ログアウトしますか？', part:'第{n}部',
   hint1:'ブースを回ってスタンプを集めましょう', hint2:'{n}個以上集めると、ラッキーくじに応募できます！', hint3:'（集めたスタンプは第1部・第2部で引き継がれます）',
   got:'スタンプ獲得', notYet:'まだもらっていません', stampBtn:'スタンプをもらう', entryBtn:'ラッキーくじに応募', entered:'応募済み', won:'当選済み',
@@ -350,6 +358,9 @@ function tmsg(m){
   if(/이미 등록된 전화번호/.test(m)) return t('m_phoneUsed');
   if(/휴대폰 번호/.test(m)) return t('m_phone');
   if(/이름이 너무/.test(m)) return t('m_nameLong');
+  if(/한글로만/.test(m)) return t('eNameKo');
+  if(/최대 5글자/.test(m)) return t('eNameLen');
+  if(/사용할 수 없는 이름/.test(m)) return t('eNameBad');
   if(/이름을 입력/.test(m)) return t('m_name');
   if(/소속을 선택/.test(m)) return t('m_aff');
   if(/여러 번 틀려서/.test(m)){ const x=m.match(/(\d+)초/); return t('m_lock',{n:x?x[1]:''}); }
@@ -407,11 +418,19 @@ $('#phone').addEventListener('input', e => {
   e.target.value = d.length>7 ? d.slice(0,3)+'-'+d.slice(3,7)+'-'+d.slice(7)
                  : d.length>3 ? d.slice(0,3)+'-'+d.slice(3) : d;
 });
+const BAD_NAMES = ["병신", "븅신", "빙신", "시발", "씨발", "시팔", "씨팔", "쉬발", "시바", "씨바", "시벌", "씨벌", "좆", "존나", "졸라", "조까", "지랄", "새끼", "쌔끼", "섀끼", "개새", "씹", "썅", "쌍년", "쌍놈", "느금", "니미", "애미", "엠창", "엿먹", "창녀", "창년", "걸레", "보지", "자지", "꼴통", "미친", "또라이", "돌아이", "섹스", "야동", "딸딸"];
+function nameError(n){
+  if(!/^[가-힣]+$/.test(n)) return t('eNameKo');          // 완성형 한글만 (초성·자음/모음·영문·공백 불가)
+  if(n.length > 5) return t('eNameLen');
+  if(BAD_NAMES.some(w => n.includes(w))) return t('eNameBad');
+  return '';
+}
 $('#go').onclick = async () => {
   const name = $('#name').value.trim(), phone = $('#phone').value.replace(/\D/g,'');
   const err = $('#loginErr'); err.textContent = '';
   if(!aff) return err.textContent = t('eAff');
   if(!name) return err.textContent = t('eName');
+  const ne = nameError(name); if(ne) return err.textContent = ne;
   if(phone.length<10) return err.textContent = t('ePhone');
   $('#go').disabled = true;
   try{

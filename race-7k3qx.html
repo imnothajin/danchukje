@@ -41,6 +41,9 @@ input{font:inherit;font-size:18px;color:var(--fg);background:transparent;border:
 #toast .t1{font-size:min(10vw,110px);line-height:1.1;letter-spacing:.02em}
 #toast .t2{font-size:min(2.4vw,24px);color:var(--mute);margin-top:6px}
 #toast.go{animation:toast 2.1s ease-out forwards}
+#toast.first.go{animation-duration:3.4s}
+#toast.first .t1{font-size:min(15vw,170px)}
+#toast.first .t2{color:var(--fg)}
 @keyframes toast{0%{opacity:0;transform:translateY(18px)}12%{opacity:1;transform:none}78%{opacity:1}100%{opacity:0}}
 #count{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:min(34vw,360px);pointer-events:none;opacity:0}
 #count.go{animation:cnt .95s ease-out forwards}
@@ -62,7 +65,7 @@ input{font:inherit;font-size:18px;color:var(--fg);background:transparent;border:
 .rr{display:flex;align-items:baseline;gap:20px;opacity:0;transform:translateY(14px);transition:opacity .5s,transform .5s;min-width:min(34vw,420px)}
 .rr.on{opacity:1;transform:none}
 .rr .n{width:2.4em;text-align:right;color:var(--mute);font-size:min(3.2vh,30px)}
-.rr .nm{font-size:min(6.4vh,64px);line-height:1.15}
+.rr .nm{font-size:min(5.4vh,54px);line-height:1.15}
 .rr .m{color:var(--mute);font-size:min(2.2vh,18px)}
 .rr.top .n{color:var(--fg)}
 #result .hint{margin-top:3.5vh;font-size:13px;color:var(--mute);opacity:0;transition:opacity .6s}
@@ -97,159 +100,177 @@ input{font:inherit;font-size:18px;color:var(--fg);background:transparent;border:
 
 <script>
 /* ===== 물리 코어 (DOM 없음) ===== */
-const W = 24;            // 코스 폭
-const R = 0.32;          // 공 반지름
-const G = 19;            // 중력
-const DRAG = 0.10;       // 공기저항
-const VMAX = 26;
-const E_WALL = 0.32, E_BALL = 0.35;
-const DT = 1 / 120;
+const W = 24, R = 0.32, G = 19, DRAG = 0.10, VMAX = 26;
+const E_WALL = 0.32, E_BALL = 0.38;
+const DT = 1 / 180;
+const GY = 22;           // 게이트(출발선) y
+
+function pose(b, t) {    // 움직이는 장애물의 현재 선분
+  const s = b.s;
+  if (b.slide) {
+    const ph = t * b.f + b.ph;
+    b.vx = b.amp * b.f * Math.cos(ph);
+    s.x1 = b.cx + b.amp * Math.sin(ph) - b.len / 2; s.x2 = s.x1 + b.len; s.y1 = s.y2 = b.cy;
+  } else {
+    b.a = b.a0 + b.w * t;
+    const ca = Math.cos(b.a) * b.len / 2, sa = Math.sin(b.a) * b.len / 2;
+    s.x1 = b.cx - ca; s.y1 = b.cy - sa; s.x2 = b.cx + ca; s.y2 = b.cy + sa;
+  }
+}
 
 function buildCourse() {
-  const segs = [];       // 정적 선분/기둥
-  const bars = [];       // 회전 막대
-  const S = (x1, y1, x2, y2, t = 0.07) => segs.push({ x1, y1, x2, y2, t });
-  const peg = (x, y, t = 0.2) => segs.push({ x1: x, y1: y, x2: x, y2: y, t });
+  const segs = [], bars = [];
+  const S = (x1, y1, x2, y2, t = 0.09, o) => segs.push(Object.assign({ x1, y1, x2, y2, t }, o));
+  const peg = (x, y, t = 0.18, o) => S(x, y, x, y, t, o);
+  const bump = (x, y, r = 0.55) => peg(x, y, r, { k: 'bump' });
+  const spin = (cx, cy, len, w, a0) => bars.push({ cx, cy, len, w, a0, a: a0, t: 0.14, s: { t: 0.14 } });
+  const mill = (cx, cy, len, w, a0) => { spin(cx, cy, len, w, a0); spin(cx, cy, len, w, a0 + Math.PI / 2); };
+  const plank = (cx, cy, len, amp, f, ph) => bars.push({ slide: true, cx, cy, len, amp, f, ph, vx: 0, t: 0.12, s: { t: 0.12 } });
 
-  // 호퍼: 양쪽 벽 + 깔때기
-  S(0, -40, 0, 22 + 150);
-  S(W, -40, W, 22 + 150);
-  S(0, 14, 9.2, 22);
-  S(W, 14, W - 9.2, 22);
-  const gate = { x1: 9.2, y1: 22, x2: W - 9.2, y2: 22, t: 0.1 };   // 시작 전에만 닫힘
+  S(0, -40, 0, 300, 0.1); S(W, -40, W, 300, 0.1);
+  const gate = { x1: 0, y1: GY, x2: W, y2: GY, t: 0.1 };   // 전폭 게이트 (다 같이 출발)
 
-  // A. 핀 구간 (플링코)
-  for (let r = 0, y = 27; y < 52; r++, y += 2.3) {
-    const off = r % 2 ? 1.5 : 0;
-    for (let x = 1.5 + off; x < W - 0.5; x += 3) peg(x, y);
-  }
-  // 벽 쪽 쐐기 (벽에 공이 얹혀 쉬지 않게)
-  for (let y = 27; y < 52; y += 4.6) {
+  // A. 범퍼 밭: 큰 범퍼(튕겨냄) + 작은 핀
+  let y = 27;
+  for (let r = 0; r < 9; r++, y += 2.9) {
+    const off = r % 2 ? 1.8 : 0;
+    for (let x = 1.8 + off, i = 0; x < W - 1; x += 3.6, i++) (i + r) % 3 === 0 ? bump(x, y) : peg(x, y, 0.16);
     S(0, y, 1.1, y + 1.2); S(W, y, W - 1.1, y + 1.2);
   }
-
-  // B. 지그재그 경사 (왼쪽 → 오른쪽 → ...)
-  let y = 56;
-  for (let i = 0; i < 6; i++) {
-    if (i % 2 === 0) { S(0, y, 18, y + 3.6); peg(9, y + 1.9 + 0.7, 0.16); }
-    else { S(W, y, 6, y + 3.6); peg(15, y + 1.9 + 0.7, 0.16); }
-    y += 7.2;
+  // B. 지그재그 경사: 돌기(속도 방해) + 부스트 구간 + 낙하지점 범퍼
+  y = 56;
+  for (let i = 0; i < 7; i++) {
+    const L = i % 2 === 0, x1 = L ? 0 : W, x2 = L ? 18 : 6;
+    S(x1, y, x2, y + 3.4, 0.09, i % 3 === 1 ? { k: 'boost' } : null);
+    const nb = i % 2 ? 3 : 2;
+    for (let j = 1; j <= nb; j++) { const f = j / (nb + 1); peg(x1 + (x2 - x1) * f, y + 3.4 * f - 0.1, 0.28); }
+    bump(L ? 21 : 3, y + 5.4, 0.5);
+    y += 7.4;
   }
-  // 경사 끝 보정 (모서리에 끼지 않게)
-  // C. 회전 막대 구간
-  const spin = (cx, cy, len, w, a0) => bars.push({ cx, cy, len, w, a: a0, t: 0.14 });
-  const cy0 = y + 3;
-  spin(6.2, cy0, 9, 2.4, 0);
-  spin(17.8, cy0, 9, -2.4, 1.2);
-  spin(12, cy0 + 9, 11, 2.0, 0.6);
-  spin(5.5, cy0 + 18, 8, -2.6, 0);
-  spin(18.5, cy0 + 18, 8, 2.6, 1.5);
-  spin(12, cy0 + 27, 11.5, -2.2, 0.3);
-  const cEnd = cy0 + 33;
-
-  // D. 갈라지는 쐐기 → 합류 깔때기
+  // C. 빗살 체: 간격이 좁아 공이 위에 올라앉고, 뒤에서 밀어야 빠짐
+  const sy = y + 1;
+  for (let r = 0; r < 3; r++) for (let x = 4 + (r % 2) * 0.5; x < 20.2; x += 1.0) peg(x, sy + r * 3.2, 0.12);
+  S(0, sy - 1, 3.4, sy + 1.4); S(W, sy - 1, W - 3.4, sy + 1.4);
+  S(3.4, sy + 1.4, 3.4, sy + 8.6); S(W - 3.4, sy + 1.4, W - 3.4, sy + 8.6);   // 양옆 배수로 폭 3.4
+  // D. 풍차 + 좌우로 움직이는 판
+  const cy0 = sy + 13;
+  mill(6.5, cy0, 8, 2.2, 0); mill(17.5, cy0, 8, -2.2, 0.8);
+  mill(12, cy0 + 9, 10, 1.8, 0.3);
+  plank(12, cy0 + 16, 7, 7.5, 0.8, 0); plank(12, cy0 + 21, 7, 7.5, 0.8, Math.PI);
+  mill(5.5, cy0 + 28, 8, -2.6, 0); mill(18.5, cy0 + 28, 8, 2.6, 1.5);
+  const cEnd = cy0 + 34;
+  // E. 쐐기(튕김) → 합류 깔때기 → 긴 직선 (1등 슬로모 구간)
   const dy = cEnd;
-  S(12, dy, 8.2, dy + 5); S(12, dy, 15.8, dy + 5); S(8.2, dy + 5, 12, dy + 7.4); S(15.8, dy + 5, 12, dy + 7.4);
-  for (let r = 0; r < 3; r++) { peg(4.5 + r * 0.4, dy + 11 + r * 2.2); peg(W - 4.5 - r * 0.4, dy + 11 + r * 2.2); }
+  S(12, dy, 8.2, dy + 5, 0.09, { k: 'pad' }); S(12, dy, 15.8, dy + 5, 0.09, { k: 'pad' }); S(8.2, dy + 5, 12, dy + 7.4); S(15.8, dy + 5, 12, dy + 7.4);
+  for (let r = 0; r < 3; r++) { bump(4.5 + r * 0.4, dy + 11 + r * 2.2, 0.45); bump(W - 4.5 - r * 0.4, dy + 11 + r * 2.2, 0.45); }
   const fy = dy + 18;
-  S(0, fy, 9.6, fy + 7);         // 깔때기 (폭 4.8)
-  S(W, fy, W - 9.6, fy + 7);
+  S(0, fy, 9.6, fy + 7); S(W, fy, W - 9.6, fy + 7);
   const chuteY = fy + 7;
-  S(9.6, chuteY, 9.6, chuteY + 7);
-  S(W - 9.6, chuteY, W - 9.6, chuteY + 7);
-  // E. 결승 직전 열린 구간 (핀 몇 개로 마지막 순위 흔들기)
-  const ey = chuteY + 7;
+  S(9.6, chuteY, 9.6, chuteY + 9); S(W - 9.6, chuteY, W - 9.6, chuteY + 9);
+  const ey = chuteY + 9;
   S(9.6, ey, 3.5, ey + 4); S(W - 9.6, ey, W - 3.5, ey + 4);
   peg(9, ey + 6.5); peg(15, ey + 6.5); peg(12, ey + 8.7); peg(6.5, ey + 9.5); peg(17.5, ey + 9.5);
   const goalY = ey + 13;
-
-  // 바닥 (결승선 아래에 닫힌 공간 — 완주한 공은 어차피 제거됨)
   S(0, goalY + 6, W, goalY + 6);
+  for (const s of segs) if (s.x1 === s.x2 && (s.x1 === 0 || s.x1 === W) && s.y2 > 100 && s.y1 < 0) s.y2 = goalY + 6;
 
-  // 세로 벽 길이를 코스에 맞춤
-  for (const s of segs) if (s.x1 === s.x2 && (s.x1 === 0 || s.x1 === W) && s.y2 > 100) s.y2 = goalY + 6;
-
-  // 공간 인덱스 (세로 구간별)
+  for (const b of bars) pose(b, 0);
   const BAND = 4, bands = new Map();
   for (const s of segs) {
-    const lo = Math.floor((Math.min(s.y1, s.y2) - 1.5) / BAND), hi = Math.floor((Math.max(s.y1, s.y2) + 1.5) / BAND);
+    const lo = Math.floor((Math.min(s.y1, s.y2) - 1.8) / BAND), hi = Math.floor((Math.max(s.y1, s.y2) + 1.8) / BAND);
     for (let b = lo; b <= hi; b++) { if (!bands.has(b)) bands.set(b, []); bands.get(b).push(s); }
   }
-  return { segs, bars, bands, BAND, gate, goalY, gateY: 22, spinTop: cy0 - 6, W };
+  return { segs, bars, bands, BAND, gate, goalY, gateY: GY, spinTop: cy0 - 8, W };
 }
 
 function closestOnSeg(px, py, s) {
-  const dx = s.x2 - s.x1, dy = s.y2 - s.y1;
-  const l2 = dx * dx + dy * dy;
+  const dx = s.x2 - s.x1, dy = s.y2 - s.y1, l2 = dx * dx + dy * dy;
   let t = l2 > 0 ? ((px - s.x1) * dx + (py - s.y1) * dy) / l2 : 0;
   t = t < 0 ? 0 : t > 1 ? 1 : t;
   return { x: s.x1 + dx * t, y: s.y1 + dy * t };
 }
+function segX(ax, ay, bx, by, s) {   // 이동 경로가 벽 선분을 가로질렀는가 (터널링 검사)
+  const f = (x1, y1, x2, y2, x3, y3) => (x3 - x1) * (y2 - y1) - (y3 - y1) * (x2 - x1);
+  return f(s.x1, s.y1, s.x2, s.y2, ax, ay) * f(s.x1, s.y1, s.x2, s.y2, bx, by) < 0 &&
+         f(ax, ay, bx, by, s.x1, s.y1) * f(ax, ay, bx, by, s.x2, s.y2) < 0;
+}
 
 class Sim {
   constructor(course, entries) {
-    this.c = course;
-    this.time = 0;
-    this.gateOpen = false;
-    this.started = false;
-    this.marbles = [];
-    this.finished = [];        // 완주 순서
-    this.lastExit = 0;
-    const n = entries.length;
-    const cols = Math.max(1, Math.floor((W - 2) / 0.7));
-    entries.forEach((e, i) => {
-      const row = Math.floor(i / cols), col = i % cols;
-      const rowN = Math.min(cols, n - row * cols);
-      const span = (rowN - 1) * 0.7, x0 = W / 2 - span / 2;
+    this.c = course; this.time = 0; this.gateOpen = false; this.started = false;
+    this.marbles = []; this.finished = []; this.fx = []; this.grid = new Map();
+    const n = entries.length, S = 0.66, cols = Math.floor((W - 2.6) / S) + 1;
+    entries.forEach((e, i) => {      // 출발선 바로 위에 촘촘한 격자로 정렬 (행 차이 최소화)
+      const r = Math.floor(i / cols), c = i % cols, inRow = Math.min(cols, n - r * cols);
       this.marbles.push({
-        e, id: e.id, name: e.name, x: x0 + col * 0.7 + (Math.random() - 0.5) * 0.12,
-        y: 13.4 - row * 0.68 + (Math.random() - 0.5) * 0.1,
-        vx: 0, vy: 0, hue: 0, done: false, still: 0, tFin: 0
+        e, id: e.id, name: e.name,
+        x: W / 2 + (c - (inRow - 1) / 2) * S + (r % 2 ? 0.165 : -0.165) + (Math.random() - 0.5) * 0.03,
+        y: GY - 0.1 - R - 0.02 - r * 0.575,
+        vx: 0, vy: 0, hue: (i * 137.508) % 360, done: false, still: 0, tFin: 0, cd: 1.5 + Math.random() * 3, dash: 0, px: 0, py: 0, bestY: 0, stall: 0
       });
     });
-    // 색: 색상환을 섞어서 배정
-    const hues = this.marbles.map((_, i) => (i * 137.508) % 360);
-    this.marbles.forEach((m, i) => { m.hue = hues[i]; });
-    this.live = this.marbles.slice();
+    this.live = this.marbles;
   }
-
-  open() { this.gateOpen = true; this.started = true; this.lastExit = this.time; }
+  open() { this.gateOpen = true; this.started = true; }
 
   _collideSeg(m, s, vwx, vwy) {
     const q = closestOnSeg(m.x, m.y, s);
     let dx = m.x - q.x, dy = m.y - q.y;
-    const rr = R + s.t;
-    const d2 = dx * dx + dy * dy;
+    const rr = R + s.t, d2 = dx * dx + dy * dy;
     if (d2 >= rr * rr) return;
     let d = Math.sqrt(d2);
     if (d < 1e-6) { dx = 0; dy = -1; d = 1; }
     const nx = dx / d, ny = dy / d;
     m.x = q.x + nx * rr; m.y = q.y + ny * rr;
-    const rvx = m.vx - vwx, rvy = m.vy - vwy;
-    const vn = rvx * nx + rvy * ny;
+    const vn = (m.vx - vwx) * nx + (m.vy - vwy) * ny;
     if (vn < 0) {
-      const j = -(1 + E_WALL) * vn;
+      let j = -(1 + (s.k === 'pad' ? 1.1 : E_WALL)) * vn;
+      if ((s.k === 'bump' || s.k === 'pad') && vn < -0.6) j += s.k === 'bump' ? 3.4 : 2.2;   // 범퍼 킥
       m.vx += j * nx; m.vy += j * ny;
-      // 약한 마찰
       const tx = -ny, ty = nx, vt = (m.vx - vwx) * tx + (m.vy - vwy) * ty;
       m.vx -= vt * 0.02 * tx; m.vy -= vt * 0.02 * ty;
     }
+    if (s.k === 'boost' && ny < -0.3) { const sg = ny > 0 ? -1 : 1, tx = -ny * sg, ty = nx * sg; const k = ty >= 0 ? 1 : -1; m.vx += tx * k * 0.09; m.vy += ty * k * 0.09; }
   }
 
   _wallPass(m) {
-    const c = this.c;
-    const b = Math.floor(m.y / c.BAND);
-    const list = c.bands.get(b);
+    const c = this.c, list = c.bands.get(Math.floor(m.y / c.BAND));
     if (list) for (let i = 0; i < list.length; i++) this._collideSeg(m, list[i], 0, 0);
     if (!this.gateOpen) this._collideSeg(m, c.gate, 0, 0);
-    if (m.y > c.spinTop) {
-      for (let i = 0; i < c.bars.length; i++) {
-        const br = c.bars[i];
-        const ca = Math.cos(br.a), sa = Math.sin(br.a), h = br.len / 2;
-        const s = { x1: br.cx - ca * h, y1: br.cy - sa * h, x2: br.cx + ca * h, y2: br.cy + sa * h, t: br.t };
-        if (Math.abs(m.y - br.cy) > h + 1 || Math.abs(m.x - br.cx) > h + 1) continue;
-        const q = closestOnSeg(m.x, m.y, s);
-        this._collideSeg(m, s, -br.w * (q.y - br.cy), br.w * (q.x - br.cx));
+    if (m.y > c.spinTop) for (const b of c.bars) {
+      const s = b.s, h = (b.len || 8) / 2 + 1;
+      if (Math.abs(m.y - b.cy) > h || Math.abs(m.x - b.cx) > h + (b.amp || 0)) continue;
+      if (b.slide) this._collideSeg(m, s, b.vx, 0);
+      else { const q = closestOnSeg(m.x, m.y, s); this._collideSeg(m, s, -b.w * (q.y - b.cy), b.w * (q.x - b.cx)); }
+    }
+  }
+
+  _near(m, rad, fn) {
+    const r = Math.ceil(rad), cx = Math.floor(m.x), cy = Math.floor(m.y + 100);
+    for (let ox = -r; ox <= r; ox++) for (let oy = -r; oy <= r; oy++) {
+      const a = this.grid.get((cx + ox) * 4096 + cy + oy); if (!a) continue;
+      for (const o of a) if (o !== m && !o.done) { const dx = o.x - m.x, dy = o.y - m.y, d = Math.hypot(dx, dy); if (d < rad) fn(o, dx / (d || 1), dy / (d || 1), d); }
+    }
+  }
+
+  _skills(L, dt) {
+    let lead = -1e9; for (const m of L) if (!m.done && m.y > lead) lead = m.y;
+    for (const m of L) {
+      if (m.done) continue;
+      if (m.dash > 0) m.dash -= dt;
+      m.cd -= dt;
+      if (m.cd > 0 || m.y < this.c.gateY + 2) continue;
+      let near = 0; this._near(m, 1.2, () => near++);
+      const behind = Math.min(40, lead - m.y);
+      if (near && Math.random() < 0.016 + behind * 0.0003) {            // 밀치기: 주변 공을 날려보냄 (뒤처질수록 자주)
+        this._near(m, 2.1, (o, nx, ny, d) => { const p = 4 + 7 * (1 - d / 2.1); o.vx += nx * p; o.vy += ny * p - 1.5; });
+        m.vx -= 0.5; m.vy += 1.5;
+        this.fx.push({ k: 'ring', x: m.x, y: m.y, t0: this.time, hue: m.hue });
+        m.cd = 3 + Math.random() * 3;
+      } else if (Math.random() < 0.0016 + behind * 0.00025) {           // 대시: 순간 가속
+        m.vy += 9; m.vx += (Math.random() - 0.5) * 4; m.dash = 0.6;
+        this.fx.push({ k: 'dash', x: m.x, y: m.y, t0: this.time, hue: m.hue });
+        m.cd = 3 + Math.random() * 3;
       }
     }
   }
@@ -257,10 +278,9 @@ class Sim {
   step(dt = DT) {
     const c = this.c, L = this.live;
     this.time += dt;
-    for (const br of c.bars) br.a += br.w * dt;
-
-    for (let i = 0; i < L.length; i++) {
-      const m = L[i];
+    for (const b of c.bars) pose(b, this.time);
+    for (const m of L) {
+      m.px = m.x; m.py = m.y;
       m.vy += G * dt;
       const k = 1 - DRAG * dt; m.vx *= k; m.vy *= k;
       const sp = Math.hypot(m.vx, m.vy);
@@ -268,63 +288,55 @@ class Sim {
       m.x += m.vx * dt; m.y += m.vy * dt;
       this._wallPass(m);
     }
-
-    // 공끼리 충돌
-    const cell = 1.0, grid = new Map();
-    for (let i = 0; i < L.length; i++) {
-      const m = L[i];
+    const cell = 1.0, grid = this.grid; grid.clear();
+    for (const m of L) {
       const key = Math.floor(m.x / cell) * 4096 + Math.floor((m.y + 100) / cell);
       let a = grid.get(key); if (!a) grid.set(key, a = []); a.push(m);
     }
     const D = 2 * R;
     for (let i = 0; i < L.length; i++) {
-      const m = L[i];
-      const cx = Math.floor(m.x / cell), cy = Math.floor((m.y + 100) / cell);
+      const m = L[i], cx = Math.floor(m.x / cell), cy = Math.floor((m.y + 100) / cell);
       for (let ox = -1; ox <= 1; ox++) for (let oy = -1; oy <= 1; oy++) {
         const a = grid.get((cx + ox) * 4096 + cy + oy); if (!a) continue;
         for (let j = 0; j < a.length; j++) {
           const o = a[j];
-          if (o.id <= m.id && o !== m) { /* 쌍 한 번만 */ }
           if (o === m || o.id < m.id) continue;
           const dx = o.x - m.x, dy = o.y - m.y, d2 = dx * dx + dy * dy;
           if (d2 >= D * D || d2 === 0) continue;
-          const d = Math.sqrt(d2), nx = dx / d, ny = dy / d, ov = (D - d) / 2;
+          const d = Math.sqrt(d2), nx = dx / d, ny = dy / d, ov = Math.min((D - d) / 2, 0.08);   // 한 번에 밀리는 양 제한 → 벽 뚫림 방지
           m.x -= nx * ov; m.y -= ny * ov; o.x += nx * ov; o.y += ny * ov;
           const vn = (o.vx - m.vx) * nx + (o.vy - m.vy) * ny;
-          if (vn < 0) {
-            const j2 = -(1 + E_BALL) * vn / 2;
-            m.vx -= j2 * nx; m.vy -= j2 * ny; o.vx += j2 * nx; o.vy += j2 * ny;
-          }
+          if (vn < 0) { const j2 = -(1 + E_BALL) * vn / 2; m.vx -= j2 * nx; m.vy -= j2 * ny; o.vx += j2 * nx; o.vy += j2 * ny; }
         }
       }
     }
-    for (let i = 0; i < L.length; i++) this._wallPass(L[i]);
-
-    // 완주 / 이탈 / 정체 처리
+    if (this.started) this._skills(L, dt);
     const out = [];
-    let exited = false;
-    for (let i = 0; i < L.length; i++) {
-      const m = L[i];
+    for (const m of L) {
+      this._wallPass(m);
+      // 안전장치: 벽을 가로질렀으면 이전 위치로, 코스 밖이면 안으로
+      const lo = Math.floor((Math.min(m.py, m.y) - 1) / c.BAND), hi = Math.floor((Math.max(m.py, m.y) + 1) / c.BAND);
+      let bad = false;
+      for (let b = lo; b <= hi && !bad; b++) { const ls = c.bands.get(b); if (ls) for (const s of ls) if ((s.x1 !== s.x2 || s.y1 !== s.y2) && segX(m.px, m.py, m.x, m.y, s)) { bad = true; break; } }
+      if (!bad && !this.gateOpen && m.py < c.gateY && m.y > c.gateY - 0.05) bad = true;
+      if (bad) { m.x = m.px; m.y = m.py; m.vx *= 0.2; m.vy *= 0.2; }
+      if (m.x < 0.45) { m.x = 0.45; if (m.vx < 0) m.vx = 0; } else if (m.x > W - 0.45) { m.x = W - 0.45; if (m.vx > 0) m.vx = 0; }
+      if (m.y > c.goalY + 5.5) { m.y = c.goalY + 5.5; if (m.vy > 0) m.vy = 0; }
+      if (m.done) continue;
       if (m.y > c.goalY) { m.done = true; m.tFin = this.time; this.finished.push(m); out.push(m); continue; }
-      if (m.y > c.gateY + 1) exited = true;
       if (this.started) {
         const sp = Math.abs(m.vx) + Math.abs(m.vy);
         if (m.y > c.gateY + 2 && sp < 0.15) m.still += dt; else m.still = 0;
+        if (m.y > m.bestY + 0.6) { m.bestY = m.y; m.stall = 0; } else m.stall += dt;
+        if (m.stall > 3.5) { m.vx += (Math.random() < 0.5 ? -1 : 1) * (5 + Math.random() * 3); m.vy += 4; m.stall = 0; }
         if (m.still > 2.2) { m.vx += (Math.random() - 0.5) * 8; m.vy -= 3 + Math.random() * 2; m.still = 0; }
-        if (m.x < -1 || m.x > W + 1 || m.y < -60) { m.x = W / 2; m.y = 12; m.vx = m.vy = 0; }
       }
     }
-    if (exited) this.lastExit = this.time;
-    // 호퍼가 막혔으면 살짝 흔들기
-    if (this.started && this.time - this.lastExit > 3.5) {
-      for (const m of L) if (m.y < c.gateY + 1) { m.vx += (Math.random() - 0.5) * 3; m.vy -= Math.random() * 2; }
-      this.lastExit = this.time - 2.5;
-    }
-    if (out.length) this.live = L.filter(m => !m.done);
+    while (this.fx.length && this.time - this.fx[0].t0 > 0.6) this.fx.shift();
     return out;
   }
 
-  ranked() { return this.live.slice().sort((a, b) => b.y - a.y); }
+  ranked() { return this.live.filter(m => !m.done).sort((a, b) => b.y - a.y); }
 }
 
 if (typeof module !== 'undefined') module.exports = { buildCourse, Sim, DT, W, R };
@@ -354,10 +366,16 @@ let course=null, sim=null, candKey='', NEED=0;
 let ts=1;                  // 슬로모션 배율
 let endAt=0;
 const cam={x:12,y:13,z:1};
+let ROSTER={};            // 학번 -> 이름 (1부 표시용)
+let holdUntil=0, holdX=12, flash=0, sA=17, sB=17;
 const parts=[];
 const cv=$('#cv'), ctx=cv.getContext('2d'), mini=$('#mini'), mctx=mini.getContext('2d');
 let DPR=1;
 
+function disp(id,name){      // 1부: '이름(학번)'
+  const nm=ROSTER&&ROSTER[id];
+  return (ROUND===1&&nm)?nm+'('+id+')':name;
+}
 function shuffle(a){
   const r=new Uint32Array(a.length);
   (crypto&&crypto.getRandomValues)?crypto.getRandomValues(r):r.forEach((_,i)=>r[i]=Math.random()*4294967296);
@@ -375,9 +393,9 @@ addEventListener('resize',resize);
 /* ================= 응모자 → 시뮬레이션 ================= */
 function buildSim(cands){
   course=buildCourse();
-  const list=shuffle(cands.map(c=>({id:c.id,name:c.name,affiliation:c.affiliation})));
+  const list=shuffle(cands.map(c=>({id:c.id,name:disp(c.id,c.name),affiliation:c.affiliation})));
   sim=new Sim(course,list);
-  for(let i=0;i<260;i++) sim.step();      // 호퍼 안에서 먼저 가라앉혀 둔다
+  for(let i=0;i<60;i++) sim.step();       // 출발선 위에서 먼저 안정화
   NEED=Math.min(Math.max(LIMIT-COUNT,0),list.length);
   cam.x=12; cam.y=17.5; cam.z=1; ts=1; parts.length=0;
   $('#empty').classList.toggle('hide',list.length>0);
@@ -401,7 +419,7 @@ async function sync(){
   ROUND=s.round; LIMIT=s.draw_limit; COUNT=s.round_winners;
   const ws=await rpc('admin_winners',{p_pw:PW});
   const mine=ws.filter(w=>w.round===ROUND);
-  $('#list').textContent=mine.length?'당첨  '+mine.map(w=>w.name).join('  ·  '):'';
+  $('#list').textContent=mine.length?'당첨  '+mine.map(w=>disp(w.id,w.name)).join('  ·  '):'';
   if(state==='idle'){
     const cands=await rpc('admin_candidates',{p_pw:PW});
     const key=ROUND+':'+LIMIT+':'+COUNT+':'+cands.map(c=>c.id).sort().join(',');
@@ -416,6 +434,7 @@ async function enter(){
   PW=pw; try{sessionStorage.setItem('adm',pw);}catch(e){}
   $('#gate').classList.add('hide'); $('#stage').classList.remove('hide');
   resize();
+  try{ ROSTER=await rpc('admin_roster',{p_pw:PW})||{}; }catch(e){ ROSTER={}; }   // v9 미적용이면 학번만 표시
   try{ await sync(); }catch(e){ $('#err').textContent=e.message; }
   requestAnimationFrame(frame);
 }
@@ -440,8 +459,10 @@ function showCount(t){ const c=$('#count'); c.textContent=t; c.classList.remove(
 function onFinish(m,rank){
   const t=$('#toast'); t.querySelector('.t1').textContent=(COUNT+rank)+'위  '+m.name;
   t.querySelector('.t2').textContent=m.e.affiliation||'';
+  t.classList.toggle('first',rank===1);
   t.classList.remove('go'); void t.offsetWidth; t.classList.add('go');
-  for(let i=0;i<34;i++){
+  if(rank===1){ holdUntil=performance.now()+2600; holdX=m.x; flash=1; }
+  for(let i=0,N=rank===1?90:34;i<N;i++){
     const a=-Math.PI/2+(Math.random()-.5)*2.4, sp=4+Math.random()*9;
     parts.push({x:m.x,y:course.goalY,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,l:1,hue:m.hue+(Math.random()-.5)*50});
   }
@@ -453,7 +474,7 @@ async function finishRace(){
   try{
     for(const m of winners){            // 순위대로 한 명씩 기록 (기록 시각 = 순위 순서)
       const w=ROUND===1 ? await rpc('admin_record_id_winner',{p_pw:PW,p_no:m.id}) : await rpc('admin_record_winner',{p_pw:PW,p_id:m.id});
-      got.push(w);
+      w.name=disp(w.id,w.name); got.push(w);
     }
   }catch(e){ $('#err').textContent='기록 중 오류: '+e.message; }
   state='result';
@@ -487,17 +508,29 @@ $('#result').onclick=closeResult;
 const VIEW_H=26;           // 줌 1에서 보이는 세로 월드 길이
 function updateCamera(dt,ranked){
   let tx=12, ty=17.5, tz=1, tts=1;
-  if((state==='racing'||state==='ending'||state==='recording') && ranked.length){
-    const need=Math.max(1,NEED-sim.finished.length);
-    const k=Math.min(need-1,ranked.length-1);
+  const live=state==='racing'||state==='ending'||state==='recording';
+  if(live && ranked.length){
+    const now=performance.now();
+    const need=Math.max(1,NEED-sim.finished.length), k=Math.min(need-1,ranked.length-1);
     const cut=ranked[k], lead=ranked[0], riv=ranked[k+1]||cut;
-    const a=Math.max(riv.y,lead.y-34), b=Math.max(lead.y,a+1);
-    ty=(a+b)/2; tz=Math.max(0.55,Math.min(2.3,VIEW_H/((b-a)+9)));
+    // 선두~컷 구간을 부드럽게 따라감 (순위가 바뀌어도 카메라가 튀지 않게 저역통과)
+    const a=cut.y, b=Math.min(lead.y,a+30), q=1-Math.exp(-dt*4);
+    sA+=(a-sA)*q; sB+=(b-sB)*q;
+    ty=(sA+sB)/2; tz=Math.max(0.6,Math.min(2.2,VIEW_H/((sB-sA)+10)));
+    tx=12+(cut.x-12)*Math.max(0,Math.min(1,(tz-1)/1.3));
     if(lead.y<course.gateY+3){ ty=17.5; tz=1; }
     if(cut.y>course.goalY-18){ ty=ty*0.5+(course.goalY-4)*0.5; tz=Math.max(tz,1.8); }
-    const f=Math.max(0,Math.min(1,(tz-1)/1.3));
-    tx=12+(cut.x-12)*f;
-    if(state==='racing' && NEED-sim.finished.length>=1 && cut.y>course.goalY-9 && riv!==cut && cut.y-riv.y<2.5) tts=0.35;
+    // ★ 1등 포토피니시: 결승선이 가까워지면 선두에 줌인 + 슬로모션
+    if(sim.finished.length===0){
+      const d=course.goalY-lead.y;
+      if(d<24){
+        const w=Math.min(1,(24-d)/10);
+        ty+=(course.goalY-3.5-ty)*w; tz+=(2.3-tz)*w; tx+=(lead.x-tx)*0.55*w;
+        if(d<15) tts=Math.max(0.16,Math.min(1,d/15*0.85));
+      }
+    }
+    if(now<holdUntil){ ty=course.goalY-2.5; tz=2.3; tx=12+(holdX-12)*0.5; tts=0.18; }   // 1등이 들어간 직후에도 천천히
+    else if(state==='racing' && NEED-sim.finished.length>=1 && cut.y>course.goalY-9 && riv!==cut && cut.y-riv.y<2.5) tts=Math.min(tts,0.35);
   }
   if(state==='ending'||state==='recording') tts=0.3;
   const k1=1-Math.exp(-dt*2.6);
@@ -522,15 +555,16 @@ function draw(ranked){
   ctx.lineCap='round';
   for(const g of course.segs){
     if(Math.max(g.y1,g.y2)<top||Math.min(g.y1,g.y2)>bot) continue;
-    if(g.x1===g.x2&&g.y1===g.y2){ ctx.fillStyle='#9c9c94'; ctx.beginPath(); ctx.arc(g.x1,g.y1,g.t,0,6.2832); ctx.fill(); }
-    else { ctx.strokeStyle='#e9e9e2'; ctx.lineWidth=g.t*2; ctx.beginPath(); ctx.moveTo(g.x1,g.y1); ctx.lineTo(g.x2,g.y2); ctx.stroke(); }
+    const kc=g.k==='bump'?'#e57368':g.k==='pad'?'#6fd08c':g.k==='boost'?'#5bc0de':null;
+    if(g.x1===g.x2&&g.y1===g.y2){ ctx.fillStyle=kc||'#9c9c94'; ctx.beginPath(); ctx.arc(g.x1,g.y1,g.t,0,6.2832); ctx.fill(); }
+    else { ctx.strokeStyle=kc||'#e9e9e2'; ctx.lineWidth=g.t*2; ctx.beginPath(); ctx.moveTo(g.x1,g.y1); ctx.lineTo(g.x2,g.y2); ctx.stroke(); }
   }
   // 회전 막대
   for(const b of course.bars){
     if(b.cy+b.len<top||b.cy-b.len>bot) continue;
-    const ca=Math.cos(b.a)*b.len/2, sa=Math.sin(b.a)*b.len/2;
-    ctx.strokeStyle='#fafaf7'; ctx.lineWidth=b.t*2; ctx.beginPath(); ctx.moveTo(b.cx-ca,b.cy-sa); ctx.lineTo(b.cx+ca,b.cy+sa); ctx.stroke();
-    ctx.fillStyle='#141414'; ctx.beginPath(); ctx.arc(b.cx,b.cy,0.09,0,6.2832); ctx.fill();
+    const s2=b.s;
+    ctx.strokeStyle=b.slide?'#f2c14e':'#fafaf7'; ctx.lineWidth=b.t*2; ctx.beginPath(); ctx.moveTo(s2.x1,s2.y1); ctx.lineTo(s2.x2,s2.y2); ctx.stroke();
+    if(!b.slide){ ctx.fillStyle='#141414'; ctx.beginPath(); ctx.arc(b.cx,b.cy,0.09,0,6.2832); ctx.fill(); }
   }
   // 게이트
   if(!sim.gateOpen){ ctx.strokeStyle='#e57368'; ctx.lineWidth=0.16; ctx.setLineDash([0.35,0.25]); ctx.beginPath(); ctx.moveTo(course.gate.x1,course.gate.y1); ctx.lineTo(course.gate.x2,course.gate.y2); ctx.stroke(); ctx.setLineDash([]); }
@@ -541,14 +575,25 @@ function draw(ranked){
   // 공
   const cutIdx=Math.min(Math.max(1,NEED-sim.finished.length)-1,ranked.length-1);
   const cutM=(state==='racing'||state==='ending')?ranked[cutIdx]:null;
+  const lead0=(state==='racing'||state==='ending')?ranked[0]:null;
   for(const m of sim.live){
     if(m.y<top-1||m.y>bot+1) continue;
+    if(m.dash>0){ ctx.strokeStyle='hsla('+m.hue.toFixed(0)+',90%,70%,.55)'; ctx.lineWidth=R*1.3; ctx.beginPath(); ctx.moveTo(m.x-m.vx*0.05,m.y-m.vy*0.05); ctx.lineTo(m.x-m.vx*0.16,m.y-m.vy*0.16); ctx.stroke(); }
+    ctx.globalAlpha=m.done?0.35:1;
     ctx.fillStyle='hsl('+m.hue.toFixed(0)+' 78% 62%)';
     ctx.beginPath(); ctx.arc(m.x,m.y,R,0,6.2832); ctx.fill();
     ctx.strokeStyle='rgba(20,20,20,.55)'; ctx.lineWidth=0.05; ctx.stroke();
     ctx.fillStyle='rgba(255,255,255,.35)'; ctx.beginPath(); ctx.arc(m.x-R*.3,m.y-R*.32,R*.28,0,6.2832); ctx.fill();
   }
-  if(cutM){ ctx.strokeStyle='#fafaf7'; ctx.lineWidth=0.07; ctx.beginPath(); ctx.arc(cutM.x,cutM.y,R+0.14+0.05*Math.sin(performance.now()/160),0,6.2832); ctx.stroke(); }
+  ctx.globalAlpha=1;
+  for(const f of sim.fx){   // 밀치기 충격파 / 대시 섬광
+    const age=(sim.time-f.t0)/0.6; if(age<0||age>1) continue;
+    ctx.globalAlpha=1-age; ctx.strokeStyle='hsl('+f.hue.toFixed(0)+' 90% 72%)'; ctx.lineWidth=0.12*(1-age)+0.03;
+    ctx.beginPath(); ctx.arc(f.x,f.y,f.k==='ring'?0.5+age*2.1:0.4+age*0.9,0,6.2832); ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+  if(lead0){ ctx.strokeStyle='#f2c14e'; ctx.lineWidth=0.09; ctx.beginPath(); ctx.arc(lead0.x,lead0.y,R+0.2+0.05*Math.sin(performance.now()/110),0,6.2832); ctx.stroke(); }
+  if(cutM&&cutM!==lead0){ ctx.strokeStyle='#fafaf7'; ctx.lineWidth=0.07; ctx.beginPath(); ctx.arc(cutM.x,cutM.y,R+0.14+0.05*Math.sin(performance.now()/160),0,6.2832); ctx.stroke(); }
   // 파티클
   for(const p of parts){ ctx.globalAlpha=Math.max(0,p.l); ctx.fillStyle='hsl('+p.hue.toFixed(0)+' 85% 65%)'; ctx.fillRect(p.x-0.07,p.y-0.07,0.14,0.14); }
   ctx.globalAlpha=1;
@@ -581,6 +626,7 @@ function draw(ranked){
     if(i<front||close) label(m);
   }
   drawMini(ranked);
+  if(flash>0){ ctx.fillStyle='rgba(255,255,255,'+(flash*0.45).toFixed(3)+')'; ctx.fillRect(0,0,w,h); }
 }
 
 function drawMini(ranked){
@@ -636,7 +682,7 @@ function frame(now){
       const run=state!=='idle';
       if(run){
         acc+=wall*ts; let n=0;
-        while(acc>=DT&&n<10){
+        while(acc>=DT&&n<16){
           const out=sim.step(DT); n++; acc-=DT;
           if(state==='racing') for(const m of out){
             const rank=sim.finished.indexOf(m)+1;
@@ -647,6 +693,7 @@ function frame(now){
       }
     }
     if(state==='ending'&&now>=endAt) finishRace();
+    flash=Math.max(0,flash-wall*1.8);
     for(let i=parts.length-1;i>=0;i--){ const p=parts[i]; p.vy+=14*wall; p.x+=p.vx*wall; p.y+=p.vy*wall; p.l-=wall*0.9; if(p.l<=0) parts.splice(i,1); }
   }
   const ranked=sim?sim.ranked():[];

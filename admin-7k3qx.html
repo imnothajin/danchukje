@@ -32,6 +32,9 @@ input{font:inherit;color:var(--fg);background:transparent;border:0;border-bottom
 .cnt{width:36px;text-align:right}
 .live{font-size:12px;color:var(--mute);margin-top:12px}
 nav{margin-top:8px;font-size:13px}
+.jump{position:sticky;top:0;z-index:5;background:var(--bg);padding:8px 0;margin-top:14px;border-bottom:1px solid var(--line);font-size:12px;display:flex;gap:14px;flex-wrap:wrap}
+.jump a{color:var(--mute);text-decoration:none;cursor:pointer}
+.scroll{max-height:340px;overflow-y:auto;border-top:1px solid var(--line);overscroll-behavior:contain}
 nav a{color:var(--mute)}
 </style>
 </head>
@@ -48,6 +51,7 @@ nav a{color:var(--mute)}
 <section id="dash" class="hide">
   <h1>단웅제 · 관리자</h1>
   <nav><a href="race-7k3qx.html" target="_blank">추첨 화면 열기 ↗</a></nav>
+  <div class="jump"><a data-j="sec-stat">통계</a><a data-j="sec-win">당첨자</a><a data-j="sec-people">참가자 검색</a><a data-j="sec-ent">응모자</a><a data-j="sec-booth">부스</a><a data-j="sec-pw">부스 비번</a><a data-j="sec-test">테스트 도구</a></div>
 
   <h2>진행 모드 (언제든 전환 가능 · 데이터는 지워지지 않아요)</h2>
   <div style="display:flex;gap:8px">
@@ -62,17 +66,22 @@ nav a{color:var(--mute)}
   </div>
   <div class="live" id="live"></div>
 
-  <h2>소속별 가입</h2><div id="aff"></div>
+  <h2 id="sec-stat">소속별 가입</h2><div id="aff"></div>
   <h2>도장 개수별 인원</h2><div id="dist"></div>
-  <h2>부스별 도장 수</h2><div id="booths"></div>
-  <h2>응모자 (1부·2부 공통)</h2><div id="entries"></div>
-  <h2>당첨자 (전체)</h2><div id="winners"></div>
+  <h2 id="sec-booth">부스별 도장 수</h2><div id="booths" class="scroll"></div>
+  <h2 id="sec-ent">응모자 (1부·2부 공통) <span id="entN" style="color:var(--fg)"></span></h2><div id="entries" class="scroll"></div>
+  <h2 id="sec-win">당첨자 (부별 순위순)</h2><div id="winners"></div>
 
-  <h2>부스 비밀번호 (숫자 4~8자리)</h2>
+  <h2 id="sec-people">참가자 검색 · 계정 관리</h2>
+  <input id="pq" placeholder="이름 · 전화번호 · 소속 검색 (비우면 최근 가입순)" autocomplete="off">
+  <div class="live" id="pcount"></div>
+  <div id="plist" class="scroll" style="margin-top:6px"></div>
+
+  <h2 id="sec-pw">부스 비밀번호 (숫자 4~8자리)</h2>
   <button class="btn sm" id="boothBtn">비밀번호 보기</button>
-  <div id="boothpw" style="margin-top:8px"></div>
+  <div id="boothpw" class="scroll" style="margin-top:8px"></div>
 
-  <h2>테스트 도구 (되돌릴 수 없어요)</h2>
+  <h2 id="sec-test">테스트 도구 (되돌릴 수 없어요)</h2>
   <div style="display:flex;gap:8px;flex-wrap:wrap">
     <button class="btn sm" id="resetDraws">추첨 전체 취소</button>
     <button class="btn sm" id="resetAll" style="color:#b3261e;border-color:#b3261e">학생 데이터 전체 삭제</button>
@@ -93,7 +102,8 @@ async function rpc(fn,args){
   if(!r.ok) throw new Error((j&&j.message)||'오류');
   return j;
 }
-let PW=null, timer=null, tick=0, ROUND=1;
+let PW=null, timer=null, tick=0, ROUND=1, ROSTER={};
+const dn=(id,name,rd)=>(rd===1&&ROSTER[id])?ROSTER[id]+'('+id+')':name;
 
 function el(tag,cls,text){ const e=document.createElement(tag); if(cls)e.className=cls; if(text!==undefined)e.textContent=text; return e; }
 function simple(box, pairs){
@@ -106,8 +116,9 @@ async function enter(){
   const pw=$('#pw').value; $('#gerr').textContent='';
   try{ await rpc('admin_stats',{p_pw:pw}); }catch(e){ $('#gerr').textContent=e.message; return; }
   PW=pw; try{sessionStorage.setItem('adm',pw);}catch(e){}
+  try{ ROSTER=await rpc('admin_roster',{p_pw:pw})||{}; }catch(e){ ROSTER={}; }
   $('#gate').classList.add('hide'); $('#dash').classList.remove('hide');
-  refresh(); timer=setInterval(refresh,5000);
+  refresh(); psearch(); timer=setInterval(refresh,5000);
 }
 $('#enter').onclick=enter;
 $('#pw').addEventListener('keydown',e=>{ if(e.key==='Enter') enter(); });
@@ -130,11 +141,12 @@ async function refresh(){
     simple($('#aff'), Object.entries(s.by_affiliation).map(([k,v])=>[k,v+'명']));
     simple($('#dist'), Object.entries(s.stamp_distribution).sort((a,b)=>a[0]-b[0]).map(([k,v])=>['도장 '+k+'개',v+'명']));
     const max=Math.max(1,...s.by_booth.map(b=>b.count));
-    const bx=$('#booths'); bx.innerHTML='';
+    const bx=$('#booths'); const bsT=bx.scrollTop; bx.innerHTML='';
     s.by_booth.slice().sort((a,b)=>b.count-a.count).forEach(b=>{
       const r=el('div','row'); const w=el('div','barw'); const bar=el('div','bar'); bar.style.width=(b.count/max*100)+'%'; w.append(bar);
       r.append(el('span','nm',b.name), w, el('span','cnt',b.count)); bx.append(r);
     });
+    bx.scrollTop=bsT;
     $('#live').textContent='실시간 · '+new Date().toLocaleTimeString('ko-KR');
     if(tick++%2===0) lists();
   }catch(e){ $('#live').textContent=e.message; }
@@ -143,7 +155,7 @@ async function refresh(){
 async function lists(){
   try{
     const es=await rpc('admin_entries',{p_pw:PW});
-    const eb=$('#entries'); eb.innerHTML='';
+    const eb=$('#entries'); const esT=eb.scrollTop; eb.innerHTML=''; $('#entN').textContent=es.length+'명';
     if(!es.length) eb.append(el('div','row m','—'));
     es.forEach(p=>{
       const r=el('div','row');
@@ -153,19 +165,70 @@ async function lists(){
       d.onclick=async()=>{ if(!confirm(p.name+' 님의 응모를 삭제할까요?'))return; try{await rpc('admin_delete_entry',{p_pw:PW,p_id:p.id}); refresh(); lists();}catch(e){alert(e.message);} };
       r.append(d); eb.append(r);
     });
+    eb.scrollTop=esT;
     const ws=await rpc('admin_winners',{p_pw:PW});
     const wb=$('#winners'); wb.innerHTML='';
     if(!ws.length) wb.append(el('div','row m','—'));
+    const rk={};
     ws.forEach(p=>{
+      const n=(rk[p.round]=(rk[p.round]||0)+1);
       const r=el('div','row');
-      r.append(el('span','m',p.round+'부'), el('span','nm',p.name), el('span','m',p.affiliation), el('span','m',p.phone));
+      const rs=el('b','',p.round+'부 '+n+'위'); rs.style.cssText='font-weight:400;min-width:84px';
+      r.append(rs, el('span','nm',dn(p.id,p.name,p.round)), el('span','m',p.affiliation), el('span','m',p.phone));
       const d=el('button','btn sm','취소');
       d.title='당첨과 응모를 함께 취소합니다';
-      d.onclick=async()=>{ if(!confirm(p.name+' 님의 '+p.round+'부 당첨을 취소할까요?'+(p.round===2?' (응모도 함께 삭제됩니다)':' (취소 후 다시 추첨할 수 있어요)')))return; try{await rpc('admin_remove_winner',{p_pw:PW,p_id:p.id,p_round:p.round}); refresh(); lists();}catch(e){alert(e.message);} };
+      d.onclick=async()=>{ if(!confirm(dn(p.id,p.name,p.round)+' 님의 '+p.round+'부 당첨을 취소할까요?'+(p.round===2?' (응모도 함께 삭제됩니다)':' (취소 후 다시 추첨할 수 있어요)')))return; try{await rpc('admin_remove_winner',{p_pw:PW,p_id:p.id,p_round:p.round}); refresh(); lists();}catch(e){alert(e.message);} };
       r.append(d); wb.append(r);
     });
   }catch(e){}
 }
+
+document.querySelectorAll('.jump a').forEach(l=>l.onclick=()=>{ const t=document.getElementById(l.dataset.j); if(t) window.scrollTo({top:t.getBoundingClientRect().top+scrollY-44,behavior:'smooth'}); });
+let pT=null;
+const PAGE=200; let pShown=0, pBusy=false;
+function pRow(p){
+  const row=el('div','row');
+  row.style.flexWrap='wrap';
+  row.append(el('span','nm',p.name), el('span','m',p.affiliation), el('span','m',p.phone), el('span','m','도장 '+p.stamps+(p.entered?' · 응모':'')+(p.won?' · 당첨':'')+(p.locked?' · 잠김':'')));
+  const ed=el('button','btn sm','수정');
+  ed.onclick=async()=>{
+    const nn=prompt('이름',p.name); if(nn===null) return;
+    const np=prompt('전화번호 (로그인에 쓰이는 번호)',p.phone); if(np===null) return;
+    try{ await rpc('admin_update_participant',{p_pw:PW,p_id:p.id,p_name:nn,p_phone:np}); psearch(true); }catch(e){ alert(e.message); }
+  };
+  const un=el('button','btn sm','잠금해제');
+  un.onclick=async()=>{ try{ await rpc('admin_unlock_participant',{p_pw:PW,p_id:p.id}); psearch(true); }catch(e){ alert(e.message); } };
+  const dl=el('button','btn sm','삭제'); dl.style.cssText='color:#b3261e;border-color:#b3261e';
+  dl.onclick=async()=>{
+    if(!confirm(p.name+' ('+p.phone+') 계정을 삭제할까요?\n도장·응모·당첨 기록도 함께 삭제돼요.')) return;
+    try{ await rpc('admin_delete_participant',{p_pw:PW,p_id:p.id}); psearch(true); refresh(); lists(); }catch(e){ alert(e.message); }
+  };
+  row.append(ed,un,dl); return row;
+}
+/* more=false: 처음부터 / more=true 이면 이어서. 수정·삭제 뒤에는 보던 개수만큼 다시 불러옴 */
+async function psearch(keep, more){
+  if(pBusy) return; pBusy=true;
+  const box=$('#plist'), q=$('#pq').value.trim();
+  try{
+    const off=more?pShown:0, lim=(keep&&!more)?Math.min(500,Math.max(PAGE,pShown)):PAGE;
+    const r=await rpc('admin_participants',{p_pw:PW,p_q:$('#pq').value,p_offset:off,p_limit:lim});
+    const sT=box.scrollTop;
+    if(!more) box.innerHTML='';
+    const old=box.querySelector('.more'); if(old) old.remove();
+    pShown=off+r.rows.length;
+    if(!pShown) box.append(el('div','row m','—'));
+    r.rows.forEach(p=>box.append(pRow(p)));
+    $('#pcount').textContent='전체 '+r.total+'명'+(q?' · 검색 '+r.matched+'명':'')+' · '+pShown+'명 표시 중';
+    if(pShown<r.matched){
+      const b=el('button','btn sm more','더 보기 ('+(r.matched-pShown)+'명 남음)');
+      b.style.cssText='margin:10px 0;width:100%;padding:8px';
+      b.onclick=()=>psearch(false,true); box.append(b);
+    }
+    if(keep||more) box.scrollTop=sT;
+  }catch(e){ $('#pcount').textContent=e.message; }
+  pBusy=false;
+}
+$('#pq').addEventListener('input',()=>{ clearTimeout(pT); pT=setTimeout(()=>psearch(),300); });
 
 $('#boothBtn').onclick=async()=>{
   const box=$('#boothpw');
